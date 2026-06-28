@@ -50,22 +50,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
         <div>
           <h3 style="margin-bottom: var(--sp-3);">Gửi yêu cầu</h3>
-          <form id="contact-form">
+          <form action="https://formsubmit.co/Phuocan1construction@gmail.com" method="POST">
+            <input type="hidden" name="_subject" value="[PA1] Yêu cầu tư vấn từ website">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_next" value="https://phuocan1construction.com/lien-he/">
+            <input type="hidden" name="_template" value="table">
             <div class="form-group">
               <label for="c-name">Họ &amp; Tên *</label>
-              <input type="text" id="c-name" required placeholder="Nguyễn Văn A">
+              <input type="text" name="Họ tên" id="c-name" required placeholder="Nguyễn Văn A">
             </div>
             <div class="form-group">
               <label for="c-phone">Số điện thoại *</label>
-              <input type="tel" id="c-phone" required placeholder="09xx xxx xxx">
+              <input type="tel" name="Số điện thoại" id="c-phone" required placeholder="09xx xxx xxx">
             </div>
             <div class="form-group">
               <label for="c-email">Email</label>
-              <input type="email" id="c-email" placeholder="ban@email.com">
+              <input type="email" name="Email" id="c-email" placeholder="ban@email.com">
             </div>
             <div class="form-group">
               <label for="c-service">Dịch vụ quan tâm</label>
-              <select id="c-service">
+              <select name="Dịch vụ" id="c-service">
                 <option>— Chọn dịch vụ —</option>
                 <option>Thiết kế</option>
                 <option>Thi công trọn gói</option>
@@ -76,26 +80,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
             <div class="form-group">
               <label for="c-message">Mô tả dự án</label>
-              <textarea id="c-message" placeholder="Diện tích, số tầng, vị trí..."></textarea>
+              <textarea name="Mô tả dự án" id="c-message" placeholder="Diện tích, số tầng, vị trí..."></textarea>
             </div>
             <button type="submit" class="form-submit">Gửi yêu cầu →</button>
             <p style="font-size: 0.85rem; color: var(--text-light); margin-top: var(--sp-2);">PA1 cam kết phản hồi trong 24 giờ.</p>
           </form>
-          <script>
-            document.getElementById('contact-form')?.addEventListener('submit', (e) => {
-              e.preventDefault();
-              const name = (document.getElementById('c-name') as HTMLInputElement).value;
-              const phone = (document.getElementById('c-phone') as HTMLInputElement).value;
-              const email = (document.getElementById('c-email') as HTMLInputElement).value;
-              const service = (document.getElementById('c-service') as HTMLSelectElement).value;
-              const message = (document.getElementById('c-message') as HTMLTextAreaElement).value;
-              const subject = encodeURIComponent(`[PA1] Yêu cầu từ ${name} - ${phone}`);
-              const body = encodeURIComponent(
-                `Họ tên: ${name}\nSĐT: ${phone}\nEmail: ${email}\nDịch vụ: ${service}\n\nMô tả dự án:\n${message}`
-              );
-              window.open(`mailto:Phuocan1construction@gmail.com?subject=${subject}&body=${body}`, '_self');
-            });
-          </script>
         </div>
       </div>
     </div>

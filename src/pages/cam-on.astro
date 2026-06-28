@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Cảm ơn — PA1 Construction"
+  description="PA1 đã nhận thông tin của bạn. Chúng tôi sẽ phản hồi trong 24 giờ."
+  activePage="lien-he"
+>
+
+  <section style="padding: var(--sp-6) 0; min-height: 60vh; display: flex; align-items: center;">
+    <div class="wrap" style="text-align: center;">
+      <div style="font-size: 4rem; margin-bottom: var(--sp-3);">✅</div>
+      <h1>Cảm ơn bạn!</h1>
+      <p style="font-size: 1.2rem; color: var(--text-light); max-width: 50ch; margin: var(--sp-3) auto;">
+        PA1 đã nhận được thông tin của bạn.<br>
+        Chúng tôi sẽ liên hệ lại trong vòng <strong style="color: var(--gold);">24 giờ</strong>.
+      </p>
+      <div style="margin-top: var(--sp-4); display: flex; gap: 1em; justify-content: center; flex-wrap: wrap;">
+        <a href="/" class="btn btn-primary">Về trang chủ →</a>
+        <a href="tel:0523023023" class="btn btn-secondary" style="border-color: var(--gold); color: var(--gold);">Gọi ngay: 0523.023.023</a>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>

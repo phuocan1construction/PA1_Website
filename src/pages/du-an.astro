@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CtaBand from '../components/CtaBand.astro';
+import { asset } from '../utils/paths';
 
 const newProjects = [
   { name: 'Công trình 1', folder: 'New_001', count: 50 },
@@ -65,8 +66,8 @@ const renovationSpecial = [
             {designImages.map(img => {
               const src = `/assets/images/project/Design_001/${img}.jpeg`;
               return (
-                <div class="project-card" data-full={src}>
-                  <img class="project-image" src={src} alt="Thiết kế - Công trình 1" loading="lazy">
+                <div class="project-card" data-full={asset(src)}>
+                  <img class="project-image" src={asset(src)} alt="Thiết kế - Công trình 1" loading="lazy">
                 </div>
               );
             })}
@@ -81,8 +82,8 @@ const renovationSpecial = [
             <div class="project-section-title">{project.name}</div>
             <div class="projects-grid">
               {generateImages(project.folder, project.count, project.start ?? 1).map(src => (
-                <div class="project-card" data-full={src}>
-                  <img class="project-image" src={src} alt={project.name} loading="lazy">
+                <div class="project-card" data-full={asset(src)}>
+                  <img class="project-image" src={asset(src)} alt={project.name} loading="lazy">
                 </div>
               ))}
             </div>
@@ -96,8 +97,8 @@ const renovationSpecial = [
           <div class="project-section-title">Cải tạo 1</div>
           <div class="projects-grid">
             {renovationSpecial.map(num => (
-              <div class="project-card" data-full={`/assets/images/project/Renovation_001/${num}.jpg`}>
-                <img class="project-image" src={`/assets/images/project/Renovation_001/${num}.jpg`} alt="Cải tạo 1" loading="lazy">
+              <div class="project-card" data-full={asset(`/assets/images/project/Renovation_001/${num}.jpg`)}>
+                <img class="project-image" src={asset(`/assets/images/project/Renovation_001/${num}.jpg`)} alt="Cải tạo 1" loading="lazy">
               </div>
             ))}
           </div>

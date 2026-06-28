@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CtaBand from '../../components/CtaBand.astro';
+import { asset } from '../../utils/paths';
 ---
 
 <BaseLayout
@@ -22,7 +23,7 @@ import CtaBand from '../../components/CtaBand.astro';
 
         <!-- Layout -->
         <a href="/nha-mau/layout" class="nha-mau-card">
-          <img src="/assets/images/design/Living/PK_01-1_HienDai.jpg" alt="Layout nhà mẫu" loading="lazy">
+          <img src={asset('/assets/images/design/Living/PK_01-1_HienDai.jpg')} alt="Layout nhà mẫu" loading="lazy">
           <div class="card-body">
             <h3>Layout</h3>
             <p>Mặt bằng tổng thể theo từng loại nhà: Gác lửng, Mái Thái, Mái Nhật, Nhà phố, Biệt thự, Căn hộ.</p>
@@ -31,7 +32,7 @@ import CtaBand from '../../components/CtaBand.astro';
 
         <!-- Thiết kế phòng -->
         <a href="/nha-mau/phong" class="nha-mau-card">
-          <img src="/assets/images/design/Kitchen/PB_01-1_HienDai.jpg" alt="Thiết kế phòng" loading="lazy">
+          <img src={asset('/assets/images/design/Kitchen/PB_01-1_HienDai.jpg')} alt="Thiết kế phòng" loading="lazy">
           <div class="card-body">
             <h3>Thiết kế phòng</h3>
             <p>Phòng khách, phòng bếp, phòng ngủ, WC — thiết kế nội thất theo phong cách đa dạng.</p>
@@ -40,7 +41,7 @@ import CtaBand from '../../components/CtaBand.astro';
 
         <!-- Quy trình thi công -->
         <a href="/nha-mau/quy-trinh" class="nha-mau-card">
-          <img src="/assets/images/hero-bg.jpg" alt="Quy trình thi công" loading="lazy">
+          <img src={asset('/assets/images/hero-bg.jpg')} alt="Quy trình thi công" loading="lazy">
           <div class="card-body">
             <h3>Quy trình thi công</h3>
             <p>19 hạng mục từ trắc đạc, bê tông, cốt thép đến sơn nước, cửa nhôm, lan can — chuẩn PA1.</p>

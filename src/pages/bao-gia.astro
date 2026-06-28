@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CtaBand from '../components/CtaBand.astro';
+import { asset } from '../utils/paths';
 
 const basePath = '/assets/images/quotation';
 
@@ -92,7 +93,7 @@ const buildQuote = [
       </div>
       <div class="quote-grid" style="max-width: 800px; margin: 0 auto;">
         <div class="quote-card">
-          <img src={`${basePath}/1_General/001_CachTinhDienTichXayDung.png`} alt="Cách tính diện tích xây dựng quy đổi" loading="lazy">
+          <img src={asset(`${basePath}/1_General/001_CachTinhDienTichXayDung.png`)} alt="Cách tính diện tích xây dựng quy đổi" loading="lazy">
         </div>
       </div>
     </div>
@@ -108,7 +109,7 @@ const buildQuote = [
         <div class="quote-grid">
           {designQuote.map(item => (
             <div class="quote-card">
-              <img src={`${basePath}/${item.src}`} alt={item.label} loading="lazy">
+              <img src={asset(`${basePath}/${item.src}`)} alt={item.label} loading="lazy">
               <div class="quote-label">{item.label}</div>
             </div>
           ))}
@@ -128,7 +129,7 @@ const buildQuote = [
         <div class="quote-grid">
           {buildQuote.map(item => (
             <div class="quote-card">
-              <img src={`${basePath}/${item.src}`} alt={item.label} loading="lazy">
+              <img src={asset(`${basePath}/${item.src}`)} alt={item.label} loading="lazy">
               <div class="quote-label">{item.label}</div>
             </div>
           ))}
@@ -148,7 +149,7 @@ const buildQuote = [
         <div class="quote-grid">
           {materialStructural.map(item => (
             <div class="quote-card">
-              <img src={`${basePath}/1_General/1_Material_Structural/${item.src}`} alt={item.label} loading="lazy">
+              <img src={asset(`${basePath}/1_General/1_Material_Structural/${item.src}`)} alt={item.label} loading="lazy">
               <div class="quote-label">{item.label}</div>
             </div>
           ))}
@@ -168,7 +169,7 @@ const buildQuote = [
         <div class="quote-grid">
           {materialFinishing.map(item => (
             <div class="quote-card">
-              <img src={`${basePath}/1_General/2_Material_Finishing/${item.src}`} alt={item.label} loading="lazy">
+              <img src={asset(`${basePath}/1_General/2_Material_Finishing/${item.src}`)} alt={item.label} loading="lazy">
               <div class="quote-label">{item.label}</div>
             </div>
           ))}

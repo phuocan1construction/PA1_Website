@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CtaBand from '../../components/CtaBand.astro';
+import { asset } from '../../utils/paths';
 
 const rooms = [
   {
@@ -82,8 +83,8 @@ const rooms = [
               const ext = (room as any).ext || 'jpg';
               const src = `/assets/images/design/${room.folder}/${img}.${ext}`;
               return (
-                <div class="project-card" data-full={src}>
-                  <img class="project-image" src={src} alt={room.name} loading="lazy">
+                <div class="project-card" data-full={asset(src)}>
+                  <img class="project-image" src={asset(src)} alt={room.name} loading="lazy">
                 </div>
               );
             })}

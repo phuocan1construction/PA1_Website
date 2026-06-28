@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CtaBand from '../../components/CtaBand.astro';
+import { asset } from '../../utils/paths';
 
 const basePath = '/assets/images/3_Libraries/3_Workflow';
 
@@ -137,7 +138,7 @@ const workflows = [
       <div class="quote-grid" style="max-width: 1000px; margin: 0 auto;">
         {standard.map(item => (
           <div class="quote-card">
-            <img src={`${basePath}/${item.src}`} alt={item.label} loading="lazy">
+            <img src={asset(`${basePath}/${item.src}`)} alt={item.label} loading="lazy">
             <div class="quote-label">{item.label}</div>
           </div>
         ))}
@@ -159,7 +160,7 @@ const workflows = [
             <div class="quote-grid">
               {wf.images.map(img => (
                 <div class="quote-card">
-                  <img src={`${basePath}/${img}`} alt={`${wf.name}`} loading="lazy">
+                  <img src={asset(`${basePath}/${img}`)} alt={`${wf.name}`} loading="lazy">
                 </div>
               ))}
             </div>

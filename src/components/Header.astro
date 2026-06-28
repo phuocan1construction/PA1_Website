@@ -1,4 +1,6 @@
 ---
+import { asset } from '../utils/paths';
+
 interface Props {
   activePage?: string;
 }
@@ -8,7 +10,7 @@ const { activePage = '' } = Astro.props;
 <header class="site-header">
   <div class="header-inner">
     <a href="/" class="logo">
-      <img src="/assets/images/logo-full.png" alt="PA1 Construction">
+      <img src={asset('/assets/images/logo-full.png')} alt="PA1 Construction">
     </a>
     <nav class="nav-desktop">
       <a href="/" class:list={[{ active: activePage === 'home' }]}>TRANG CHỦ</a>

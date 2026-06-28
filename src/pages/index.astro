@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CtaBand from '../components/CtaBand.astro';
+import { asset } from '../utils/paths';
 ---
 
 <BaseLayout
@@ -10,7 +11,7 @@ import CtaBand from '../components/CtaBand.astro';
 >
 
   <!-- HERO -->
-  <section class="hero" style="background-image: url('/assets/images/hero-bg.jpg');">
+  <section class="hero" style={`background-image: url('${asset('/assets/images/hero-bg.jpg')}')`}>
     <div class="wrap">
       <div class="hero-content">
         <h1>Dự án chất, PA1 lo tất.</h1>
@@ -62,7 +63,7 @@ import CtaBand from '../components/CtaBand.astro';
         </div>
       </div>
       <div style="max-width: 600px; margin: var(--sp-4) auto 0; text-align: center;">
-        <img src="/assets/images/home/CCHN-XD_New.jpg" alt="Chứng chỉ hành nghề xây dựng PA1" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);" loading="lazy">
+        <img src={asset('/assets/images/home/CCHN-XD_New.jpg')} alt="Chứng chỉ hành nghề xây dựng PA1" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);" loading="lazy">
       </div>
     </div>
   </section>
@@ -200,22 +201,22 @@ import CtaBand from '../components/CtaBand.astro';
         <h2>DỰ ÁN TIÊU BIỂU</h2>
       </div>
       <div class="projects-grid">
-        <div class="project-card" data-full="/assets/images/project/Renovation_001/01.jpg">
-          <img class="project-image" src="/assets/images/project/Renovation_001/01.jpg" alt="Sửa chữa cải tạo" loading="lazy">
+        <div class="project-card" data-full={asset('/assets/images/project/Renovation_001/01.jpg')}>
+          <img class="project-image" src={asset('/assets/images/project/Renovation_001/01.jpg')} alt="Sửa chữa cải tạo" loading="lazy">
           <div class="project-info">
             <h4>Sửa chữa cải tạo</h4>
             <p>Cải tạo nhà phố — nâng cấp kết cấu &amp; mặt tiền</p>
           </div>
         </div>
-        <div class="project-card" data-full="/assets/images/project/New_001/01.jpg">
-          <img class="project-image" src="/assets/images/project/New_001/01.jpg" alt="Thi công trọn gói" loading="lazy">
+        <div class="project-card" data-full={asset('/assets/images/project/New_001/01.jpg')}>
+          <img class="project-image" src={asset('/assets/images/project/New_001/01.jpg')} alt="Thi công trọn gói" loading="lazy">
           <div class="project-info">
             <h4>Thi công trọn gói</h4>
             <p>Nhà phố — thiết kế &amp; thi công từ A đến Z</p>
           </div>
         </div>
-        <div class="project-card" data-full="/assets/images/project/New_003/01.jpg">
-          <img class="project-image" src="/assets/images/project/New_003/01.jpg" alt="Thiết kế kết cấu" loading="lazy">
+        <div class="project-card" data-full={asset('/assets/images/project/New_003/01.jpg')}>
+          <img class="project-image" src={asset('/assets/images/project/New_003/01.jpg')} alt="Thiết kế kết cấu" loading="lazy">
           <div class="project-info">
             <h4>Thiết kế kết cấu</h4>
             <p>Công trình dân dụng — tính toán &amp; thi công</p>

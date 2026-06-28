@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CtaBand from '../../components/CtaBand.astro';
+import { asset } from '../../utils/paths';
 
 const layouts = [
   {
@@ -54,8 +55,8 @@ const layouts = [
                   {item.images.map(img => {
                     const src = `/assets/images/${category.basePath}/${item.folder}/${img}.jpg`;
                     return (
-                      <div class="project-card" data-full={src}>
-                        <img class="project-image" src={src} alt={`${category.name} - ${item.name}`} loading="lazy">
+                      <div class="project-card" data-full={asset(src)}>
+                        <img class="project-image" src={asset(src)} alt={`${category.name} - ${item.name}`} loading="lazy">
                       </div>
                     );
                   })}

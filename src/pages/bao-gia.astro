@@ -1,0 +1,186 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaBand from '../components/CtaBand.astro';
+
+const basePath = '/assets/images/quotation';
+
+const materialStructural = [
+  { src: '01_vat-tu-thep-xi-mang-xay-nha.png', label: 'Thép & Xi măng' },
+  { src: '03_vat-tu-gach.png', label: 'Gạch xây' },
+  { src: '05_thuong-hieu-da-xay-dung-be-tong.png', label: 'Đá & Bê tông' },
+  { src: '07_vat-tu-ong-cap-thoat-nuoc-hop-noi-day-dien.png', label: 'Ống nước & Dây điện' },
+  { src: '09_vat-tu-ong-luong-day-dien.png', label: 'Ống luồn dây điện' },
+  { src: '10_ong-dong-may-lanh.png', label: 'Ống đồng máy lạnh' },
+  { src: '11_vat-tu-xa-go-thep-va-ton-lop-mai.png', label: 'Xà gồ & Tôn lợp' },
+  { src: '13_vi-keo-thep-va-ngoi-lop-mai.png', label: 'Vì kèo & Ngói' },
+  { src: '15_con-ke-be-tong-luoi-chong-nut-va-hoa-chat-chong-moi.png', label: 'Con kê & Chống mối' },
+  { src: '18_he-thong-tiep-dia.png', label: 'Hệ thống tiếp địa' },
+];
+
+const materialFinishing = [
+  { src: '01_gach-op-lat.png', label: 'Gạch ốp lát' },
+  { src: '02_keo-dan-gach.png', label: 'Keo dán gạch' },
+  { src: '03_keo-cha-ron-gach.png', label: 'Keo chà ron gạch' },
+  { src: '04_tran-thach-cao.png', label: 'Trần thạch cao' },
+  { src: '05_bot-tret-son-nuoc.png', label: 'Bột trét & Sơn nước' },
+  { src: '05_son-lot-chong-kiem.png', label: 'Sơn lót chống kiềm' },
+  { src: '06_hang-muc-cua-nhom-kinh.png', label: 'Cửa nhôm kính' },
+  { src: '06_hang-muc-cua-nhom-kinh1.png', label: 'Cửa nhôm kính (2)' },
+  { src: '07_phu-kien-cua-nhom.png', label: 'Phụ kiện cửa nhôm' },
+  { src: '08_khung-bao-ve-cua-so.png', label: 'Khung bảo vệ cửa sổ' },
+  { src: '09_hang-muc-cua-noi-that.png', label: 'Cửa nội thất' },
+  { src: '09_hang-muc-cua-noi-that1.png', label: 'Cửa nội thất (2)' },
+  { src: '09_hang-muc-cua-noi-that2.png', label: 'Cửa nội thất (3)' },
+  { src: '10_hang-muc-cua-noi-that.png', label: 'Cửa nội thất (4)' },
+  { src: '11_phu-kien-tay-nam-va-khoa-cua.png', label: 'Tay nắm & Khóa cửa' },
+  { src: '12_da-granite1.png', label: 'Đá granite' },
+  { src: '12_da-nhan-tao.png', label: 'Đá nhân tạo' },
+  { src: '12_da-nung-ke.png', label: 'Đá nung kệ' },
+  { src: '13_vat-tu-day-mang-day-dien.png', label: 'Dây máng & Dây điện' },
+  { src: '14_vo-tu-dien-tong-tu-dien-tang.png', label: 'Vỏ tủ điện tổng & tầng' },
+  { src: '15_hang-muc-cong-tac-o-cam-panasonic0.png', label: 'Công tắc Panasonic' },
+  { src: '15_hang-muc-cong-tac-o-cam-panasonic1.png', label: 'Công tắc Panasonic (2)' },
+  { src: '15_hang-muc-cong-tac-o-cam-schneider.png', label: 'Công tắc Schneider' },
+  { src: '15_hang-muc-cong-tac-o-cam-sino.png', label: 'Công tắc Sino' },
+  { src: '16_den-led-am-tran1.png', label: 'Đèn LED âm trần' },
+  { src: '16_den-trang-tri.png', label: 'Đèn trang trí' },
+  { src: '17_thiet-bi-ve-sinh0.png', label: 'Thiết bị vệ sinh' },
+  { src: '17_thiet-bi-ve-sinh1.png', label: 'Thiết bị vệ sinh (2)' },
+  { src: '17_thiet-bi-ve-sinh2.png', label: 'Thiết bị vệ sinh (3)' },
+  { src: '17_guong-soi.png', label: 'Gương soi' },
+  { src: '17_pheu-thu-san-va-cau-chan-rac.png', label: 'Phễu thu sàn & Cầu chắn rác' },
+  { src: '17_quat-hut-am-tran-wc.png', label: 'Quạt hút âm trần WC' },
+  { src: '18_vach-kinh-phu-kien-nha-wc1.png', label: 'Vách kính WC' },
+  { src: '19_phu-kien-thiet-bi-ve-sinh1.png', label: 'Phụ kiện TBVS' },
+  { src: '20_bon-chua-nuoc-va-may-nuoc-nong-nang-luong-mat-troi.png', label: 'Bồn nước & NLMT' },
+  { src: '21_chat-lieu-lan-can-cau-thang.png', label: 'Lan can cầu thang' },
+  { src: '22_chat-lieu-lan-can-ban-cong.png', label: 'Lan can ban công' },
+  { src: '23_vat-tu-chong-tham.png', label: 'Chống thấm' },
+];
+
+const designQuote = [
+  { src: '2_Design/Design_01.jpg', label: 'Báo giá thiết kế (1)' },
+  { src: '2_Design/Design_02.jpg', label: 'Báo giá thiết kế (2)' },
+];
+
+const buildQuote = [
+  { src: '3_Build/01_Structural/Quotation_Structural.jpg', label: 'Thi công phần thô' },
+  { src: '3_Build/02_Full/Quotation_Full.jpg', label: 'Thi công trọn gói' },
+  { src: '3_Build/03_Finish/Quotation_Finish.jpg', label: 'Thi công hoàn thiện' },
+];
+---
+
+<BaseLayout
+  title="Báo giá — PA1 Construction"
+  description="Báo giá vật tư xây dựng, vật liệu hoàn thiện và cách tính diện tích xây dựng quy đổi. PA1 Construction minh bạch từ báo giá."
+  activePage="bao-gia"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Có khi nào!!!</h1>
+      <p>Bạn mua một món tưởng "hời",<br>nhưng khi nhận nó, chỉ muốn vứt nó đi cho xong!!!</p>
+    </div>
+  </section>
+
+  <!-- Cách tính diện tích -->
+  <section>
+    <div class="wrap">
+      <div class="section-header">
+        <h2>Cách tính diện tích xây dựng</h2>
+        <p>Hiểu đúng cách quy đổi diện tích để biết chính xác chi phí xây nhà.</p>
+      </div>
+      <div class="quote-grid" style="max-width: 800px; margin: 0 auto;">
+        <div class="quote-card">
+          <img src={`${basePath}/1_General/001_CachTinhDienTichXayDung.png`} alt="Cách tính diện tích xây dựng quy đổi" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Báo giá thiết kế -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="quote-category">
+        <div class="section-header">
+          <h2>Báo giá Thiết kế</h2>
+        </div>
+        <div class="quote-grid">
+          {designQuote.map(item => (
+            <div class="quote-card">
+              <img src={`${basePath}/${item.src}`} alt={item.label} loading="lazy">
+              <div class="quote-label">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Báo giá thi công -->
+  <section>
+    <div class="wrap">
+      <div class="quote-category">
+        <div class="section-header">
+          <h2>Báo giá Thi công</h2>
+          <p>Phần thô, trọn gói, hoàn thiện — chọn gói phù hợp nhu cầu.</p>
+        </div>
+        <div class="quote-grid">
+          {buildQuote.map(item => (
+            <div class="quote-card">
+              <img src={`${basePath}/${item.src}`} alt={item.label} loading="lazy">
+              <div class="quote-label">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vật tư phần thô -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="quote-category">
+        <div class="section-header">
+          <h2>Vật tư phần thô</h2>
+          <p>Thép, xi măng, gạch, bê tông, ống nước, dây điện — các hạng mục kết cấu chính.</p>
+        </div>
+        <div class="quote-grid">
+          {materialStructural.map(item => (
+            <div class="quote-card">
+              <img src={`${basePath}/1_General/1_Material_Structural/${item.src}`} alt={item.label} loading="lazy">
+              <div class="quote-label">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vật tư hoàn thiện -->
+  <section>
+    <div class="wrap">
+      <div class="quote-category">
+        <div class="section-header">
+          <h2>Vật tư hoàn thiện</h2>
+          <p>Gạch ốp lát, sơn, cửa, thiết bị vệ sinh, đèn, lan can — hoàn thiện công trình.</p>
+        </div>
+        <div class="quote-grid">
+          {materialFinishing.map(item => (
+            <div class="quote-card">
+              <img src={`${basePath}/1_General/2_Material_Finishing/${item.src}`} alt={item.label} loading="lazy">
+              <div class="quote-label">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Cần báo giá chi tiết cho công trình của bạn?"
+    description="Liên hệ PA1 để được khảo sát thực tế & báo giá chính xác trong 24 giờ."
+    buttonText="Liên hệ báo giá →"
+  />
+
+</BaseLayout>

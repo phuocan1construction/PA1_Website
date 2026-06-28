@@ -1,0 +1,19 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  buttonText?: string;
+  buttonHref?: string;
+}
+const { title, description, buttonText = 'Liên hệ ngay →', buttonHref = '/lien-he' } = Astro.props;
+---
+
+<section style="padding: var(--sp-4) 0;">
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>{title}</h2>
+      <p>{description}</p>
+      <a href={buttonHref} class="btn btn-primary">{buttonText}</a>
+    </div>
+  </div>
+</section>

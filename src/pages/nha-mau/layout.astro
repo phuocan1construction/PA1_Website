@@ -1,0 +1,95 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CtaBand from '../../components/CtaBand.astro';
+
+const layouts = [
+  {
+    name: 'Nhà Gác lửng',
+    items: [
+      { name: 'Nhà mẫu 1', folder: 'PA1_NhaGacLung_01', images: [] },
+      { name: 'Nhà mẫu 2', folder: 'PA1_NhaGacLung_02', images: [
+        'PA1_NhaGacLung_02_01','PA1_NhaGacLung_02_02','PA1_NhaGacLung_02_03',
+        'PA1_NhaGacLung_02_04','PA1_NhaGacLung_02_05','PA1_NhaGacLung_02_06','PA1_NhaGacLung_02_07',
+      ]},
+    ],
+    basePath: '3_Libraries/1_Layout/1_NhaGacLung',
+  },
+  {
+    name: 'Nhà Mái Nhật',
+    items: [
+      { name: 'Nhà mẫu 1', folder: 'NhaMaiNhat_01', images: [
+        'NhaMaiNhat_01_01','NhaMaiNhat_01_02','NhaMaiNhat_01_03','NhaMaiNhat_01_04',
+        'NhaMaiNhat_01_05','NhaMaiNhat_01_06','NhaMaiNhat_01_07','NhaMaiNhat_01_08',
+        'NhaMaiNhat_01_09','NhaMaiNhat_01_10','NhaMaiNhat_01_11','NhaMaiNhat_01_12',
+      ]},
+    ],
+    basePath: '3_Libraries/1_Layout/3_NhaMaiNhat',
+  },
+];
+---
+
+<BaseLayout
+  title="Layout nhà mẫu — PA1 Construction"
+  description="Mặt bằng tổng thể theo từng loại nhà: Gác lửng, Mái Thái, Mái Nhật, Nhà phố, Biệt thự."
+  activePage="nha-mau-layout"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Layout nhà mẫu</h1>
+      <p>Mặt bằng tổng thể theo từng loại nhà — tham khảo trước khi thiết kế.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      {layouts.map(category => (
+        <div class="project-section">
+          <div class="project-section-title">{category.name}</div>
+          {category.items.map(item => (
+            item.images.length > 0 && (
+              <div style="margin-bottom: var(--sp-4);">
+                <h4 style="margin-bottom: var(--sp-2); color: var(--text-light);">{item.name}</h4>
+                <div class="projects-grid">
+                  {item.images.map(img => {
+                    const src = `/assets/images/${category.basePath}/${item.folder}/${img}.jpg`;
+                    return (
+                      <div class="project-card" data-full={src}>
+                        <img class="project-image" src={src} alt={`${category.name} - ${item.name}`} loading="lazy">
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          ))}
+        </div>
+      ))}
+
+      <!-- Các loại nhà chưa có dữ liệu -->
+      <div class="project-section">
+        <div class="project-section-title">Nhà Mái Thái</div>
+        <p style="color: var(--text-light);">Đang cập nhật...</p>
+      </div>
+      <div class="project-section">
+        <div class="project-section-title">Nhà phố</div>
+        <p style="color: var(--text-light);">Đang cập nhật...</p>
+      </div>
+      <div class="project-section">
+        <div class="project-section-title">Biệt thự</div>
+        <p style="color: var(--text-light);">Đang cập nhật...</p>
+      </div>
+      <div class="project-section">
+        <div class="project-section-title">Căn hộ</div>
+        <p style="color: var(--text-light);">Đang cập nhật...</p>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Cần layout riêng cho đất của bạn?"
+    description="PA1 thiết kế mặt bằng theo kích thước thửa đất thực tế."
+    buttonText="Liên hệ thiết kế →"
+  />
+
+</BaseLayout>

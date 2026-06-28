@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Liên hệ — PA1 Construction"
+  description="Liên hệ PA1 Construction — khảo sát miễn phí, tư vấn phương án, báo giá trong 24 giờ. ĐT: 0523.023.023"
+  activePage="lien-he"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Liên hệ PA1</h1>
+      <p>Để lại thông tin — PA1 sẽ liên hệ khảo sát &amp; tư vấn trong 24 giờ.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="contact-grid">
+        <div>
+          <h3 style="margin-bottom: var(--sp-3);">Thông tin liên hệ</h3>
+          <div class="contact-item">
+            <span class="label">Điện thoại:</span>
+            <a href="tel:0523023023" style="color: var(--gold);">0523.023.023</a>
+          </div>
+          <div class="contact-item">
+            <span class="label">Email:</span>
+            <a href="mailto:Phuocan1construction@gmail.com" style="color: var(--gold);">Phuocan1construction@gmail.com</a>
+          </div>
+          <div class="contact-item">
+            <span class="label">Trụ sở:</span> 
+            <span>243/15A Bình Thung, Đông Hòa, Hồ Chí Minh</span>
+          </div>
+          <div class="contact-item">
+            <span class="label">Chi Nhánh 1:</span>
+            <span>Phước Hậu, Vĩnh Long (Tươi: 0354.020.916)</span>
+          </div>
+          <div class="contact-item">
+            <span class="label">Giờ làm việc:</span>
+            <span>Thứ 2 – Thứ 7, 8h00 – 17h00</span>
+          </div>
+          <div class="contact-item">
+            <span class="label">Đại diện:</span>
+            <span>Nguyễn Hữu Phước</span>
+          </div>
+          <div class="map-container">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2107!2d106.8021838!3d10.9030446!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174d8c54a5321b7%3A0x2c609d6acb6b2d21!2s243%20%C4%90%20B%C3%ACnh%20Thung%2C%20%C4%90%C3%B4ng%20H%C3%B2a%2C%20H%E1%BB%93%20Ch%C3%AD%20Minh!5e0!3m2!1svi!2svn" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin-bottom: var(--sp-3);">Gửi yêu cầu</h3>
+          <form id="contact-form" action="mailto:Phuocan1construction@gmail.com" method="post" enctype="text/plain">
+            <div class="form-group">
+              <label for="name">Họ &amp; Tên *</label>
+              <input type="text" id="name" name="name" required placeholder="Nguyễn Văn A">
+            </div>
+            <div class="form-group">
+              <label for="phone">Số điện thoại *</label>
+              <input type="tel" id="phone" name="phone" required placeholder="09xx xxx xxx">
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="ban@email.com">
+            </div>
+            <div class="form-group">
+              <label for="service">Dịch vụ quan tâm</label>
+              <select id="service" name="service">
+                <option>— Chọn dịch vụ —</option>
+                <option>Thiết kế</option>
+                <option>Thi công trọn gói</option>
+                <option>Thi công phần thô</option>
+                <option>Sửa chữa cải tạo</option>
+                <option>Khác</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="message">Mô tả dự án</label>
+              <textarea id="message" name="message" placeholder="Diện tích, số tầng, vị trí..."></textarea>
+            </div>
+            <button type="submit" class="form-submit">Gửi yêu cầu →</button>
+            <p style="font-size: 0.85rem; color: var(--text-light); margin-top: var(--sp-2);">PA1 cam kết phản hồi trong 24 giờ.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>

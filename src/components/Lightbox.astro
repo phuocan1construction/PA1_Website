@@ -1,0 +1,47 @@
+---
+---
+
+<div id="lightbox-overlay" class="lightbox-overlay">
+  <button class="lightbox-close">&times;</button>
+  <img src="" alt="Phóng to">
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('lightbox-overlay');
+    if (!overlay) return;
+    const lbImg = overlay.querySelector('img');
+
+    function open(src: string) {
+      if (lbImg) {
+        lbImg.src = src;
+        overlay.classList.add('active');
+      }
+    }
+
+    document.querySelectorAll('.project-card[data-full]').forEach(card => {
+      card.addEventListener('click', () => {
+        open(card.getAttribute('data-full') || '');
+      });
+    });
+
+    document.querySelectorAll('.quote-card img').forEach(img => {
+      img.style.cursor = 'pointer';
+      img.addEventListener('click', () => {
+        open((img as HTMLImageElement).src);
+      });
+    });
+
+    overlay.addEventListener('click', () => {
+      overlay.classList.remove('active');
+      if (lbImg) lbImg.src = '';
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('active')) {
+        overlay.classList.remove('active');
+        if (lbImg) lbImg.src = '';
+      }
+    });
+  });
+</script>

@@ -1,0 +1,63 @@
+---
+interface Props {
+  activePage?: string;
+}
+const { activePage = '' } = Astro.props;
+---
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <img src="/assets/images/logo-full.png" alt="PA1 Construction">
+    </a>
+    <nav class="nav-desktop">
+      <a href="/" class:list={[{ active: activePage === 'home' }]}>TRANG CHỦ</a>
+      <a href="/du-an" class:list={[{ active: activePage === 'du-an' }]}>DỰ ÁN</a>
+      <div class="nav-dropdown">
+        <a href="/nha-mau" class:list={['nav-dropdown-toggle', { active: activePage.startsWith('nha-mau') }]}>NHÀ MẪU &#9662;</a>
+        <div class="nav-dropdown-menu">
+          <a href="/nha-mau/layout">LAYOUT</a>
+          <a href="/nha-mau/phong">THIẾT KẾ PHÒNG</a>
+          <a href="/nha-mau/quy-trinh">QUY TRÌNH THI CÔNG</a>
+        </div>
+      </div>
+      <a href="/bao-gia" class:list={[{ active: activePage === 'bao-gia' }]}>BÁO GIÁ</a>
+      <a href="/cam-nang" class:list={[{ active: activePage === 'cam-nang' }]}>CẨM NANG</a>
+      <a href="/lien-he" class:list={[{ active: activePage === 'lien-he' }]}>LIÊN HỆ</a>
+    </nav>
+    <button class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <nav class="nav-mobile">
+    <a href="/" class:list={[{ active: activePage === 'home' }]}>TRANG CHỦ</a>
+    <a href="/du-an" class:list={[{ active: activePage === 'du-an' }]}>DỰ ÁN</a>
+    <a href="/nha-mau" class:list={[{ active: activePage.startsWith('nha-mau') }]}>NHÀ MẪU</a>
+    <div class="nav-sub">
+      <a href="/nha-mau/layout">LAYOUT</a>
+      <a href="/nha-mau/phong">THIẾT KẾ PHÒNG</a>
+      <a href="/nha-mau/quy-trinh">QUY TRÌNH THI CÔNG</a>
+    </div>
+    <a href="/bao-gia" class:list={[{ active: activePage === 'bao-gia' }]}>BÁO GIÁ</a>
+    <a href="/cam-nang" class:list={[{ active: activePage === 'cam-nang' }]}>CẨM NANG</a>
+    <a href="/lien-he" class:list={[{ active: activePage === 'lien-he' }]}>LIÊN HỆ</a>
+  </nav>
+</header>
+
+<script>
+  const toggle = document.querySelector('.nav-toggle');
+  const mobileNav = document.querySelector('.nav-mobile');
+  if (toggle && mobileNav) {
+    toggle.addEventListener('click', () => {
+      const isOpen = mobileNav.classList.toggle('is-open');
+      toggle.classList.toggle('is-open', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    mobileNav.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        mobileNav.classList.remove('is-open');
+        toggle.classList.remove('is-open');
+      });
+    });
+  }
+</script>

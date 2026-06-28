@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaBand from '../components/CtaBand.astro';
+---
+
+<BaseLayout
+  title="Cẩm nang xây dựng — PA1 Construction"
+  description="Chia sẻ kinh nghiệm thực tế từ hàng trăm công trình PA1: dự toán chi phí, pháp lý, cải tạo nhà cũ."
+  activePage="cam-nang"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Cẩm nang xây dựng</h1>
+      <p>Chia sẻ kinh nghiệm thực tế từ hàng trăm công trình PA1 đã trực tiếp thực hiện.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-header">
+        <h2>Bài viết tiêu biểu</h2>
+      </div>
+      <div class="blog-grid">
+        <article class="blog-card">
+          <div class="blog-topic">Tại sao phải xây nhà?</div>
+          <h4>Xây nhà — đầu tư hay tiêu sản?</h4>
+          <p>Nhiều người mua đất rồi để đó, nhiều người thuê nhà cả đời. Vậy khi nào nên xây? Bài viết phân tích góc nhìn tài chính, công năng, và giá trị gia đình khi quyết định xây nhà.</p>
+        </article>
+        <article class="blog-card">
+          <div class="blog-topic">Xây nhà cần lưu ý gì?</div>
+          <h4>7 điều chủ nhà thường bỏ sót trước khi khởi công</h4>
+          <p>Từ pháp lý, thiết kế, ngân sách dự phòng đến chọn nhà thầu — những vấn đề nhỏ nhưng gây hậu quả lớn nếu bỏ qua.</p>
+        </article>
+        <article class="blog-card">
+          <div class="blog-topic">Xây nhà chuẩn bị gì?</div>
+          <h4>Checklist chuẩn bị xây nhà từ A đến Z</h4>
+          <p>Giấy tờ pháp lý, ngân sách, thiết kế, chọn vật tư, chọn đơn vị thi công — danh sách đầy đủ giúp chủ nhà không bỏ sót bước nào.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUY TRÌNH CÔNG TÁC -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="section-header">
+        <h2>Quy trình thi công</h2>
+        <p>19 hạng mục thi công chuẩn PA1 — từ trắc đạc đến lan can.</p>
+      </div>
+      <div style="text-align: center;">
+        <a href="/nha-mau/quy-trinh" class="btn btn-primary" style="font-size: 1.1rem; padding: 1em 2.5em;">Xem toàn bộ quy trình →</a>
+      </div>
+      <div class="blog-grid" style="margin-top: var(--sp-4);">
+        <article class="blog-card">
+          <div class="blog-topic">Dự toán chi phí</div>
+          <h4>Vì sao 2 căn nhà cùng diện tích lại chênh giá đến 30%?</h4>
+          <p>Phần lớn chủ nhà chỉ nhìn vào đơn giá/m² mà bỏ qua những hệ số ẩn trong cách tính diện tích thực tế.</p>
+        </article>
+        <article class="blog-card">
+          <div class="blog-topic">Pháp lý</div>
+          <h4>3 giấy tờ thường bị bỏ sót trước khi khởi công</h4>
+          <p>Giấy phép xây dựng, bản vẽ được duyệt, và hồ sơ khảo sát địa chất — ba hạng mục mà chủ nhà thường bỏ qua.</p>
+        </article>
+        <article class="blog-card">
+          <div class="blog-topic">Cải tạo nhà cũ</div>
+          <h4>Nhà cũ trên 20 năm: sửa hay đập đi xây lại?</h4>
+          <p>Phụ thuộc vào hiện trạng kết cấu, mục tiêu sử dụng, và ngân sách thực tế.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Có câu hỏi riêng?"
+    description="Đừng tự tìm câu trả lời một mình — hỏi những người trong nghề."
+    buttonText="Liên hệ PA1 →"
+  />
+
+</BaseLayout>

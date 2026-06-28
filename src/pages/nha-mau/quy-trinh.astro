@@ -1,0 +1,180 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CtaBand from '../../components/CtaBand.astro';
+
+const basePath = '/assets/images/3_Libraries/3_Workflow';
+
+const standard = [
+  { src: '00_Standard/00_TieuChuan.png', label: 'Tiêu chuẩn áp dụng' },
+  { src: '00_Standard/01_QuyTrinhHoanThienCoBan.png', label: 'Quy trình hoàn thiện cơ bản' },
+  { src: '00_Standard/02_TanSuatLayMau.png', label: 'Tần suất lấy mẫu' },
+];
+
+const workflows = [
+  {
+    num: '01', name: 'Trắc đạc', nameEn: 'Surveying',
+    images: ['01_Surveying/TracDac-01.png'],
+  },
+  {
+    num: '02', name: 'Công tác Bê tông', nameEn: 'Concrete',
+    images: ['02_Concrete/BeTong-01.png','02_Concrete/BeTong-02.png'],
+  },
+  {
+    num: '03', name: 'GCLD cốt thép', nameEn: 'Rebar',
+    images: ['03_Rebar/CotThep-01.png','03_Rebar/CotThep-02.png'],
+  },
+  {
+    num: '04', name: 'Coppha', nameEn: 'Formwork',
+    images: ['04_Formwork/Copha-01.png'],
+  },
+  {
+    num: '05', name: 'Xây tường gạch', nameEn: 'Brick',
+    images: ['05_Brick/XayTuong-01.png','05_Brick/XayTuong-02.png','05_Brick/XayTuong-02-2.png'],
+  },
+  {
+    num: '06', name: 'Tô tường', nameEn: 'Plastering',
+    images: ['06_Plastering/ToTuong-01.png','06_Plastering/ToTuong-02.png','06_Plastering/ToTuong-02-2.png'],
+  },
+  {
+    num: '07', name: 'Chống thấm', nameEn: 'Waterproofing',
+    images: [
+      '07_Waterproofing/ChongTham-XM-01.png','07_Waterproofing/ChongTham-XM-02.png',
+      '07_Waterproofing/ChongTham-Mang-01.png','07_Waterproofing/ChongTham-Mang-02.png',
+      '07_Waterproofing/ChongTham-Mang-03.png',
+    ],
+  },
+  {
+    num: '08', name: 'Cán nền', nameEn: 'Screeding',
+    images: ['08_Screeding/CanNen-01.png','08_Screeding/CanNen-02.png','08_Screeding/CanNen-02-2.png'],
+  },
+  {
+    num: '09', name: 'Granite', nameEn: 'Granite',
+    images: [],
+  },
+  {
+    num: '10', name: 'Ốp lát gạch', nameEn: 'Tiling',
+    images: ['10_Tiling/LatGach-01.png','10_Tiling/LatGach-02.png','10_Tiling/LatGach-02-2.png'],
+  },
+  {
+    num: '11', name: 'Lát sàn gỗ', nameEn: 'Wood',
+    images: [],
+  },
+  {
+    num: '12', name: 'Chà ron', nameEn: 'TileGrouting',
+    images: [],
+  },
+  {
+    num: '13', name: 'Trần thạch cao', nameEn: 'Ceiling',
+    images: ['13_Ceiling/ThachCao-Tran-01.png','13_Ceiling/ThachCao-Tran-02.png'],
+  },
+  {
+    num: '14', name: 'Vách thạch cao', nameEn: 'Partition',
+    images: [],
+  },
+  {
+    num: '15', name: 'Sơn nước', nameEn: 'Painting',
+    images: ['15_Painting/SonNuoc-01.png','15_Painting/SonNuoc-02.png','15_Painting/SonNuoc-03.png'],
+  },
+  {
+    num: '16', name: 'Cửa nhôm kính', nameEn: 'Aluminum',
+    images: [],
+  },
+  {
+    num: '17', name: 'Cửa (nhôm, gỗ, thép)', nameEn: 'DoorWindow',
+    images: [
+      '17_DoorWindow/1_Nhom/lapDatCuaNhom-02.png',
+      '17_DoorWindow/2_Go/CuaGo.png','17_DoorWindow/2_Go/CuaGo-02.png',
+      '17_DoorWindow/3_Thep/CuaThep.png','17_DoorWindow/3_Thep/CuaThep-02.png',
+    ],
+  },
+  {
+    num: '18', name: 'Mặt dựng, alu', nameEn: 'Facade',
+    images: [],
+  },
+  {
+    num: '19', name: 'Lan can (inox, sắt, CNC)', nameEn: 'Stair-Railling',
+    images: ['19_Stair-Railling/LanCan-02.png'],
+  },
+  {
+    num: '20', name: 'Thiết bị', nameEn: 'Equipment',
+    images: ['20_Equipment/01_WC.png','20_Equipment/02-Kitchen.png','20_Equipment/03_Storeage.png'],
+  },
+  {
+    num: '21', name: 'Nghiệm thu', nameEn: 'Inspection',
+    images: ['21_Inspection/NghiemThuCongViec_01.png','21_Inspection/NghiemThuCongViec_02.png'],
+  },
+  {
+    num: '22', name: 'Phê duyệt', nameEn: 'Approval',
+    images: [
+      '22_Approval/21_QuyTrinhThucHien-BienPhapKiemTra.png',
+      '22_Approval/31_PheDuyetThietBi.png','22_Approval/31_PheDuyetThietBi-2.png',
+      '22_Approval/32-NghiemThuThietBi.png','22_Approval/55-DuyetHoSo-01.png',
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Quy trình thi công — PA1 Construction"
+  description="22 hạng mục thi công chuẩn PA1 từ trắc đạc, bê tông, cốt thép đến sơn nước, cửa, nghiệm thu, phê duyệt."
+  activePage="nha-mau-quy-trinh"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Quy trình thi công</h1>
+      <p>22 hạng mục thi công chuẩn PA1 — mỗi công đoạn đều có tiêu chuẩn rõ ràng.</p>
+    </div>
+  </section>
+
+  <!-- Tiêu chuẩn áp dụng -->
+  <section>
+    <div class="wrap">
+      <div class="section-header">
+        <h2>Tiêu chuẩn áp dụng</h2>
+        <p>PA1 áp dụng các tiêu chuẩn xây dựng hiện hành, kết hợp quy trình nội bộ được đúc kết từ thực tế công trường.</p>
+      </div>
+      <div class="quote-grid" style="max-width: 1000px; margin: 0 auto;">
+        {standard.map(item => (
+          <div class="quote-card">
+            <img src={`${basePath}/${item.src}`} alt={item.label} loading="lazy">
+            <div class="quote-label">{item.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 22 hạng mục -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="section-header">
+        <h2>PA1 Standard — 22 hạng mục</h2>
+      </div>
+
+      {workflows.map(wf => (
+        <div class="project-section">
+          <div class="project-section-title">{wf.num}. {wf.name}</div>
+          {wf.images.length > 0 ? (
+            <div class="quote-grid">
+              {wf.images.map(img => (
+                <div class="quote-card">
+                  <img src={`${basePath}/${img}`} alt={`${wf.name}`} loading="lazy">
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style="color: var(--text-light); font-style: italic;">Đang cập nhật...</p>
+          )}
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <CtaBand
+    title="Muốn xem quy trình chi tiết?"
+    description="PA1 minh bạch quy trình — liên hệ để nhận tài liệu kỹ thuật."
+    buttonText="Liên hệ PA1 →"
+  />
+
+</BaseLayout>

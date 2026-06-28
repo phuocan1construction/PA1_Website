@@ -1,0 +1,237 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaBand from '../components/CtaBand.astro';
+---
+
+<BaseLayout
+  title="PA1 Construction — Thiết kế & Thi công Nhà phố, Công trình tại TP.HCM"
+  description="PA1 Construction: 99+ công trình đã thiết kế, 31+ sửa chữa cải tạo, 5+ thi công mới. Dự án chất, PA1 lo tất."
+  activePage="home"
+>
+
+  <!-- HERO -->
+  <section class="hero" style="background-image: url('/assets/images/hero-bg.jpg');">
+    <div class="wrap">
+      <div class="hero-content">
+        <h1>Dự án chất, PA1 lo tất.</h1>
+        <p>Thiết kế, thi công công trình dân dụng và công nghiệp<br>tại TP. HCM và các tỉnh lân cận.</p>
+        <div class="hero-cta">
+          <a href="/nha-mau" class="btn btn-primary">Xem nhà mẫu →</a>
+          <a href="/du-an" class="btn btn-secondary">Xem dự án →</a>
+        </div>
+        <div class="stats-strip">
+          <div class="stat-item">
+            <div class="stat-num">99+</div>
+            <div class="stat-label">Công trình thiết kế</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">31+</div>
+            <div class="stat-label">Công trình cải tạo</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">5+</div>
+            <div class="stat-label">Công trình thi công mới</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HỒ SƠ NĂNG LỰC -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="section-header">
+        <h2>HỒ SƠ NĂNG LỰC</h2>
+        <p>PA1 Construction — đội ngũ kỹ sư có chứng chỉ hành nghề, kinh nghiệm thực tế.</p>
+      </div>
+      <div class="services-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        <div class="service-tile">
+          <div class="service-icon">📜</div>
+          <h3>CCHN Xây dựng</h3>
+          <p>Chứng chỉ hành nghề hoạt động xây dựng hạng II — đủ năng lực thiết kế &amp; thi công công trình dân dụng.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🎯</div>
+          <h3>Tầm nhìn</h3>
+          <p>Trở thành đơn vị xây dựng uy tín hàng đầu khu vực TP.HCM — nơi mỗi công trình đều là một dự án chất lượng.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🏆</div>
+          <h3>Sứ mệnh</h3>
+          <p>Mang đến giải pháp xây dựng minh bạch, chất lượng, đúng tiến độ — giúp chủ nhà an tâm từ bản vẽ đến bàn giao.</p>
+        </div>
+      </div>
+      <div style="max-width: 600px; margin: var(--sp-4) auto 0; text-align: center;">
+        <img src="/assets/images/home/CCHN-XD_New.jpg" alt="Chứng chỉ hành nghề xây dựng PA1" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- ĐỐI TÁC -->
+  <section>
+    <div class="wrap">
+      <div class="section-header">
+        <h2>ĐỐI TÁC</h2>
+        <p>PA1 hợp tác với các thương hiệu vật tư uy tín — đảm bảo chất lượng vật liệu cho mỗi công trình.</p>
+      </div>
+      <div class="services-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+        <div class="service-tile">
+          <div class="service-icon">🧱</div>
+          <h3>Vật liệu xây dựng</h3>
+          <p>Thép Pomina, Xi măng Hà Tiên, Gạch Đồng Tâm — các thương hiệu hàng đầu Việt Nam.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🚿</div>
+          <h3>Thiết bị vệ sinh</h3>
+          <p>TOTO, Inax, American Standard — thiết bị chính hãng, bảo hành dài hạn.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🎨</div>
+          <h3>Sơn &amp; Hoàn thiện</h3>
+          <p>Dulux, Jotun, Nippon — sơn cao cấp, bền màu theo thời gian.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHÍNH SÁCH -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="section-header">
+        <h2>CHÍNH SÁCH</h2>
+        <p>PA1 cam kết minh bạch — quyền lợi của chủ nhà được bảo đảm từ báo giá đến bàn giao.</p>
+      </div>
+      <div class="services-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="service-tile">
+          <div class="service-icon">💰</div>
+          <h3>Báo giá minh bạch</h3>
+          <p>Bảng dự toán chi tiết từng hạng mục — không phát sinh ẩn, không tăng giá giữa chừng.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">📅</div>
+          <h3>Cam kết tiến độ</h3>
+          <p>Tiến độ rõ ràng theo hợp đồng — chậm ngày nào, PA1 chịu phạt ngày đó.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🛡️</div>
+          <h3>Bảo hành công trình</h3>
+          <p>Bảo hành kết cấu &amp; chống thấm theo quy định — hỗ trợ bảo trì dài hạn sau bàn giao.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🔍</div>
+          <h3>Giám sát minh bạch</h3>
+          <p>Chủ nhà được cập nhật tiến độ hàng tuần — có quyền giám sát mọi công đoạn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section>
+    <div class="wrap">
+      <div class="section-header">
+        <h2>DỊCH VỤ TOÀN DIỆN</h2>
+        <p>11 hạng mục dịch vụ từ thiết kế, thi công đến tư vấn</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-tile">
+          <div class="service-icon">📐</div>
+          <h3>Thiết kế Kiến trúc</h3>
+          <p>Mặt tiền, mặt bằng, phối cảnh 3D đầy đủ trước khi thi công.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🔧</div>
+          <h3>Thiết kế Kết cấu</h3>
+          <p>Tính toán chịu lực, đảm bảo an toàn theo chuẩn hiện hành.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🛋️</div>
+          <h3>Thiết kế Nội thất</h3>
+          <p>Bố trí không gian, chọn vật liệu phù hợp công năng &amp; phong cách.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">💡</div>
+          <h3>Thiết kế MEP</h3>
+          <p>Hệ thống điện, nước đồng bộ với kiến trúc &amp; kết cấu.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🏗️</div>
+          <h3>Thi công Trọn gói</h3>
+          <p>Thiết kế + xây dựng — một đầu mối từ A đến Z.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">⛏️</div>
+          <h3>Thi công Phần thô</h3>
+          <p>Móng, kết cấu, tường bao — nền tảng vững chắc.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🎨</div>
+          <h3>Thi công Hoàn thiện</h3>
+          <p>Sơn nước, ốp lát, trần — hoàn thiện thẩm mỹ công trình.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🛏️</div>
+          <h3>Thi công Nội thất</h3>
+          <p>Thi công đồ gỗ, lắp đặt thiết bị theo bản vẽ.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">🔨</div>
+          <h3>Sửa chữa, Cải tạo</h3>
+          <p>Kinh nghiệm xử lý nhà cũ &amp; hiện trạng phức tạp.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">📋</div>
+          <h3>Giám sát Công trình</h3>
+          <p>Theo dõi tiến độ &amp; chất lượng thi công độc lập.</p>
+        </div>
+        <div class="service-tile">
+          <div class="service-icon">⚖️</div>
+          <h3>Tư vấn Pháp lý</h3>
+          <p>Hỗ trợ thủ tục giấy phép, hoàn công theo quy định.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PROJECTS -->
+  <section style="background: var(--light);">
+    <div class="wrap">
+      <div class="section-header">
+        <h2>DỰ ÁN TIÊU BIỂU</h2>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card" data-full="/assets/images/project/Renovation_001/01.jpg">
+          <img class="project-image" src="/assets/images/project/Renovation_001/01.jpg" alt="Sửa chữa cải tạo" loading="lazy">
+          <div class="project-info">
+            <h4>Sửa chữa cải tạo</h4>
+            <p>Cải tạo nhà phố — nâng cấp kết cấu &amp; mặt tiền</p>
+          </div>
+        </div>
+        <div class="project-card" data-full="/assets/images/project/New_001/01.jpg">
+          <img class="project-image" src="/assets/images/project/New_001/01.jpg" alt="Thi công trọn gói" loading="lazy">
+          <div class="project-info">
+            <h4>Thi công trọn gói</h4>
+            <p>Nhà phố — thiết kế &amp; thi công từ A đến Z</p>
+          </div>
+        </div>
+        <div class="project-card" data-full="/assets/images/project/New_003/01.jpg">
+          <img class="project-image" src="/assets/images/project/New_003/01.jpg" alt="Thiết kế kết cấu" loading="lazy">
+          <div class="project-info">
+            <h4>Thiết kế kết cấu</h4>
+            <p>Công trình dân dụng — tính toán &amp; thi công</p>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: var(--sp-4);">
+        <a href="/du-an" class="btn btn-primary">Xem toàn bộ dự án →</a>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Có dự án, hãy liên hệ PA1"
+    description="Khảo sát miễn phí, tư vấn phương án, báo giá trong 24 giờ."
+    buttonText="Liên hệ ngay →"
+  />
+
+</BaseLayout>

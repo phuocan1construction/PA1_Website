@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaBand from '../components/CtaBand.astro';
+
+const newProjects = [
+  { name: 'Công trình 1', folder: 'New_001', count: 50 },
+  { name: 'Công trình 2', folder: 'New_002', count: 32 },
+  { name: 'Công trình 3', folder: 'New_003', count: 9, start: 0 },
+];
+
+const renovationProjects = [
+  { name: 'Cải tạo 1', folder: 'Renovation_001', count: 47 },
+];
+
+function generateImages(folder: string, count: number, start: number = 1) {
+  const images = [];
+  for (let i = start; i <= count; i++) {
+    const num = String(i).padStart(2, '0');
+    images.push(`/assets/images/project/${folder}/${num}.jpg`);
+  }
+  return images;
+}
+
+const designImages = [
+  'z00','z01','z02','z03','z04','z05','z05+','z06','z07','z08','z09','z10','z11',
+  'z14','z15','z16','z17','z18','z19','z20','z21','z22','z23','z24','z25','z26','z27','z28',
+];
+
+const renovationSpecial = [
+  '00','01','02','03','04','05','06','07',
+  '08-','09-','10-','11-',
+  '12+','13+','14+',
+  '15','16','17','18','19','20','21','22','23','24','25',
+  '26','27','28','29','30','31','32','33','34','35','36',
+  '37','38','39','40','41','42','43','44','45','46',
+];
+---
+
+<BaseLayout
+  title="Dự án — PA1 Construction"
+  description="Nhà phố, cải tạo, công nghiệp — dự án thực tế."
+  activePage="du-an"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Dự án thực tế</h1>
+      <p>Dự án thực tế tại TP.HCM & các tỉnh lân cận</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="project-tabs">
+        <button class="tab-btn active" data-tab="tab-thiet-ke">Thiết kế</button>
+        <button class="tab-btn" data-tab="tab-thi-cong">Thi công</button>
+        <button class="tab-btn" data-tab="tab-cai-tao">Cải tạo</button>
+      </div>
+
+      <!-- TAB: THIẾT KẾ -->
+      <div id="tab-thiet-ke" class="tab-panel active">
+        <div class="project-section">
+          <div class="project-section-title">Công trình 1</div>
+          <div class="projects-grid">
+            {designImages.map(img => {
+              const src = `/assets/images/project/Design_001/${img}.jpeg`;
+              return (
+                <div class="project-card" data-full={src}>
+                  <img class="project-image" src={src} alt="Thiết kế - Công trình 1" loading="lazy">
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: THI CÔNG -->
+      <div id="tab-thi-cong" class="tab-panel">
+        {newProjects.map(project => (
+          <div class="project-section">
+            <div class="project-section-title">{project.name}</div>
+            <div class="projects-grid">
+              {generateImages(project.folder, project.count, project.start ?? 1).map(src => (
+                <div class="project-card" data-full={src}>
+                  <img class="project-image" src={src} alt={project.name} loading="lazy">
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- TAB: CẢI TẠO -->
+      <div id="tab-cai-tao" class="tab-panel">
+        <div class="project-section">
+          <div class="project-section-title">Cải tạo 1</div>
+          <div class="projects-grid">
+            {renovationSpecial.map(num => (
+              <div class="project-card" data-full={`/assets/images/project/Renovation_001/${num}.jpg`}>
+                <img class="project-image" src={`/assets/images/project/Renovation_001/${num}.jpg`} alt="Cải tạo 1" loading="lazy">
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Chưa thấy dự án bạn muốn?"
+    description="Kể cho PA1 nghe ý tưởng của bạn."
+    buttonText="Liên hệ tư vấn →"
+  />
+
+</BaseLayout>
+
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabGroup = btn.closest('section') || document;
+      tabGroup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tabGroup.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = tabGroup.querySelector('#' + btn.getAttribute('data-tab'));
+      if (panel) panel.classList.add('active');
+    });
+  });
+</script>

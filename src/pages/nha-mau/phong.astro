@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CtaBand from '../../components/CtaBand.astro';
+
+const rooms = [
+  {
+    name: 'Phòng khách',
+    images: [
+      'PK_01-1_HienDai','PK_01-2_HienDai','PK_01-3_HienDai','PK_01-4_HienDai',
+      'PK_02_1_thiet-ke-phong-khach-noi-that-go-oc-cho','PK_02_2_thiet-ke-phong-khach-noi-that-go-oc-cho',
+      'PK_02_3_thiet-ke-phong-khach-noi-that-go-oc-cho','PK_02_4_thiet-ke-phong-khach-noi-that-go-oc-cho',
+      'PK_02_5_thiet-ke-phong-khach-noi-that-go-oc-cho','PK_02_6_thiet-ke-phong-khach-noi-that-go-oc-cho',
+      'PK_02_7_thiet-ke-phong-khach-noi-that-go-oc-cho',
+      'PK_03_1_Luxury','PK_03_2_Luxury',
+      'PK_04_1_TanCoDien','PK_04_2_TanCoDien','PK_04_3_TanCoDien','PK_04_4_TanCoDien','PK_04_6_TanCoDien',
+      'PK_05_01_TuDo','PK_05_02_TuDo','PK_05_03_TuDo','PK_05_04_TuDo',
+      'PK_05_05_TuDo','PK_05_06_TuDo','PK_05_07_TuDo','PK_05_08_TuDo',
+      'PK_05_09_TuDo','PK_05_10_TuDo',
+    ],
+    folder: 'Living',
+  },
+  {
+    name: 'Phòng ngủ',
+    images: [
+      'PN_01-1','PN_01-2','PN_01-3',
+      'PN_02-1_TanCoDien',
+      'PN_03-01','PN_03-02','PN_03-03','PN_03-04','PN_03-05','PN_03-06','PN_03-07','PN_03-08',
+      'PN_05-01','PN_05-02','PN_05-03','PN_05-04',
+    ],
+    folder: 'Bed',
+  },
+  {
+    name: 'Phòng bếp',
+    images: [
+      'PB_01-1_HienDai','PB_01-2_HienDai','PB_01-3_HienDai','PB_01-4_HienDai',
+      'PB_02-1_TanCoDien','PB_02-2_TanCoDien','PB_02-3_TanCoDien','PB_02-4_TanCoDien',
+      'PB_03-1_Minimalism','PB_03-2_Minimalism','PB_03-3_Minimalism','PB_03-4_Minimalism',
+      'PB_04-1_Mini','PB_04-2_Mini','PB_04-3_Mini','PB_04-4_Mini',
+    ],
+    folder: 'Kitchen',
+  },
+  {
+    name: 'Phòng WC',
+    images: [
+      'PT_01-01','PT_01-02','PT_01-03','PT_01-04',
+      'PT_02-01','PT_02-02','PT_02-03','PT_02-04',
+      'PT_03-01','PT_03-02','PT_03-03','PT_03-04',
+    ],
+    folder: 'WC',
+  },
+  {
+    name: 'Phối cảnh 3D',
+    images: [
+      '01','02','03','04','05','06','07','08','09','10',
+    ],
+    folder: '3D',
+    ext: 'jpeg',
+  },
+];
+---
+
+<BaseLayout
+  title="Thiết kế phòng — Nhà mẫu PA1"
+  description="Thư viện thiết kế nội thất: phòng khách, phòng ngủ, phòng bếp, WC theo nhiều phong cách từ hiện đại đến tân cổ điển."
+  activePage="nha-mau-phong"
+>
+
+  <section class="page-header">
+    <div class="wrap">
+      <h1>Thiết kế phòng</h1>
+      <p>Phòng khách, phòng ngủ, phòng bếp, WC — thiết kế nội thất theo nhiều phong cách.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      {rooms.map(room => (
+        <div class="project-section">
+          <div class="project-section-title">{room.name}</div>
+          <div class="projects-grid">
+            {room.images.map(img => {
+              const ext = (room as any).ext || 'jpg';
+              const src = `/assets/images/design/${room.folder}/${img}.${ext}`;
+              return (
+                <div class="project-card" data-full={src}>
+                  <img class="project-image" src={src} alt={room.name} loading="lazy">
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <CtaBand
+    title="Thích phong cách nào?"
+    description="PA1 thiết kế nội thất theo yêu cầu — liên hệ để được tư vấn."
+    buttonText="Liên hệ PA1 →"
+  />
+
+</BaseLayout>

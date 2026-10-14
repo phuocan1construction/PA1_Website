@@ -77,6 +77,7 @@ svg{display:block;max-width:100%}
 .pgi .fig{text-align:center;margin:1px 0}
 .pgi svg{width:100%;height:auto;display:block;margin:0 auto}
 .pgi .fig svg{max-width:184.6mm}
+.pgi svg.sec{width:30mm!important;margin:0}
 .pgi .f3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .pgi .box{border:1px solid #c0392b;padding:2px 6px;margin:3px 0;font-size:8.3pt}
 .pgi .sm{font-size:7.8pt;color:#333;margin:1px 0}
@@ -811,14 +812,138 @@ function unitOf(t, k, unit, r) { if (unit) return unit; if (/^[gp]\d$/.test(k) |
 const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 const GN = g => ROM[[...new Set(SoDo.list.map(t => t.g))].indexOf(g)];
 const tpl = () => SoDo.list.find(t => t.id === ST.cur) || SoDo.list[0];
-const defStiff = () => ({ mode: 'rect', mat: 'B20', E: 27500, b: 200, h: 300, I: 45000, EJ: 12375 });
-function inp(t) { ST.inp[t.id] = ST.inp[t.id] || {}; const o = ST.inp[t.id]; if (!o._s1) o._s1 = defStiff(); if (!o._s2) o._s2 = defStiff(); return o; }
+const defStiff = () => ({ mode: 'rect', mat: 'B20', E: 27500, b: 200, h: 300, I: 45000, EJ: 12375, useRf: 1 });
+function inp(t) { ST.inp[t.id] = ST.inp[t.id] || {}; const o = ST.inp[t.id]; if (!o._s1) o._s1 = defStiff(); if (!o._s2) o._s2 = defStiff(); o._s1.kind = t.stiff === 'frame' ? 'col' : 'beam'; o._s2.kind = 'beam'; return o; }
+// ---------- Cốt thép trong tiết diện BTCT (tiết diện quy đổi) ----------
+const ES = 200000; // MPa – TCVN 5574:2018
+const GL = ['CB300-V', 'CB400-V', 'CB500-V'], GS = ['CB240-T', 'CB300-T'];
+// Bảng đề xuất sơ bộ dầm: b, h, trên n, Φ, gia cường trên n, Φ, dưới n, Φ, gia cường dưới n, Φ, đai Φ, a đầu, a giữa
+const RB_BEAM = [[200, 300, 2, 16, 1, 16, 2, 16, 0, 0, 6, 100, 200], [200, 350, 2, 16, 1, 16, 2, 16, 1, 16, 6, 100, 200], [200, 400, 2, 18, 1, 18, 2, 18, 1, 18, 6, 100, 200], [250, 400, 2, 18, 2, 18, 2, 18, 1, 18, 6, 100, 200],
+  [250, 500, 2, 20, 2, 20, 2, 20, 1, 20, 8, 100, 200], [300, 500, 3, 20, 2, 20, 3, 20, 2, 20, 8, 100, 200], [300, 600, 3, 22, 2, 22, 3, 22, 2, 22, 8, 100, 200], [300, 700, 3, 22, 3, 22, 3, 22, 2, 22, 8, 100, 200]];
+// Bảng đề xuất sơ bộ cột: cạnh ngắn, cạnh dài, tổng n, Φ, số cây/cạnh dài (kể góc), số cây/cạnh ngắn (kể góc), đai Φ, a đầu H/4, a giữa, ghi chú
+const RB_COL = [[200, 200, 4, 16, 2, 2, 6, 100, 200, 'Cột góc, cột hiên nhỏ.'], [200, 250, 4, 16, 2, 2, 6, 100, 200, 'Cho phép dùng 4 cây nếu tải nhỏ.'], [200, 300, 6, 16, 3, 2, 6, 100, 200, 'Cột hàng rào hoặc cột nhà 1-2 tầng.'],
+  [200, 350, 6, 18, 3, 2, 6, 100, 200, 'Phổ biến cho nhà 2-3 tầng.'], [200, 400, 6, 18, 3, 2, 6, 100, 200, 'Khoảng cách các cây ~18cm.'], [250, 250, 4, 18, 2, 2, 6, 100, 200, 'Nếu làm nhà 3-4 tầng nên tăng lên 4Ø20.'],
+  [250, 300, 6, 18, 3, 2, 8, 100, 200, 'Cột giữa nhà chịu tải trung bình.'], [250, 350, 6, 18, 3, 2, 8, 100, 200, 'Nhà phố 3 tầng lầu phổ biến.'], [250, 400, 6, 20, 3, 2, 8, 100, 200, 'Chịu lực tốt, thép Ø20 khỏe.'],
+  [250, 500, 8, 20, 4, 2, 8, 100, 200, 'Cột nhà 4-5 tầng hoặc nhịp dầm lớn.'], [250, 600, 8, 22, 4, 2, 8, 100, 200, 'Cột chịu lực chính, momen uốn lớn.'], [300, 600, 10, 22, 4, 3, 8, 100, 200, 'Thép bố trí đều quanh chu vi cột.']];
+const DIA = [[6, '255,227,221'], [8, '255,255,210'], [10, '232,248,154'], [12, '215,238,255'], [14, '255,234,206'], [16, '185,236,210'], [18, '232,218,245'], [20, '238,252,205'], [22, '211,247,250'], [25, '208,250,177'], [28, '219,218,246'], [32, '236,225,206'], [36, '237,211,235']];
+const dCol = d => (DIA.find(x => x[0] === +d) || [0, '255,255,255'])[1];
+const isRC = s => s.mode === 'rect' && /^B\d/.test(s.mat);
+function suggestRf(s) {
+  const b = +s.b, h = +s.h, keep = s.rf || {};
+  const base = { gL: keep.gL || 'CB300-V', gS: keep.gS || 'CB240-T', c: keep.c ?? 25, inclAdd: keep.inclAdd || 0, auto: 1, _b: b, _h: h, _k: s.kind };
+  if (s.kind === 'col') {
+    const sh = Math.min(b, h), lg = Math.max(b, h); let best = RB_COL[0], bd = 1e9; RB_COL.forEach(r => { const d = Math.abs(r[0] - sh) + Math.abs(r[1] - lg); if (d < bd) { bd = d; best = r; } });
+    const [rs, rl, , d, nLong, nShort, sd, s1, s2, note] = best;
+    return { ...base, d, nh: h >= b ? nLong : nShort, nb: h >= b ? nShort : nLong, sd, s1, s2, note, src: bd ? `đề xuất theo tiết diện gần nhất ${rs}×${rl}` : `đề xuất theo bảng sơ bộ cột ${rs}×${rl}` };
+  }
+  let best = RB_BEAM[0], bd = 1e9; RB_BEAM.forEach(r => { const d = Math.abs(r[0] - b) + Math.abs(r[1] - h); if (d < bd) { bd = d; best = r; } });
+  const [rb, rh, tn, td, tan, tad, bn, bdd, ban, bad, sd, s1, s2] = best;
+  return { ...base, tn, td, tan, tad: tad || td, bn, bd: bdd, ban, bad: bad || bdd, sd, s1, s2, src: bd ? `đề xuất theo tiết diện gần nhất ${rb}×${rh}` : `đề xuất theo bảng sơ bộ dầm ${rb}×${rh}` };
+}
+function ensureRf(s) {
+  if (!isRC(s)) return null;
+  if (s.useRf === undefined) s.useRf = 1;
+  if (!s.rf || (s.rf.auto && (s.rf._b !== +s.b || s.rf._h !== +s.h || s.rf._k !== s.kind))) s.rf = suggestRf(s);
+  return s.rf;
+}
+function rfBars(s) { // [{x, y, d, add}] – mm, gốc tại góc dưới trái
+  const rf = s.rf, b = +s.b, h = +s.h, out = [];
+  const row = (n, d, y, add) => { const a = rf.c + rf.sd + d / 2; for (let k = 0; k < n; k++) out.push({ x: n === 1 ? b / 2 : a + k * (b - 2 * a) / (n - 1), y, d, add }); };
+  if (s.kind === 'col') {
+    const a = rf.c + rf.sd + rf.d / 2, nb = Math.max(2, +rf.nb), nh = Math.max(2, +rf.nh);
+    for (let k = 0; k < nb; k++) { const x = a + k * (b - 2 * a) / (nb - 1); out.push({ x, y: a, d: rf.d }); out.push({ x, y: h - a, d: rf.d }); }
+    for (let k = 1; k < nh - 1; k++) { const y = a + k * (h - 2 * a) / (nh - 1); out.push({ x: a, y, d: rf.d }); out.push({ x: b - a, y, d: rf.d }); }
+    return out;
+  }
+  // dầm: thanh chạy suốt và gia cường cùng một lớp (gia cường đặt xen giữa)
+  const layer = (nc, dc, na, da, top) => {
+    const n = nc + na, dmax = Math.max(dc, na ? da : 0), a = rf.c + rf.sd + dmax / 2, y = top ? h - a : a;
+    const idx = []; for (let k = 0; k < n; k++) idx.push(k); // gán: 2 thanh biên là chạy suốt, còn lại xen kẽ
+    const isAdd = new Array(n).fill(false); let left = na; for (let k = 1; k < n - 1 && left > 0; k += 1) { if (n - 2 - (k - 1) <= left || k % 2 === 1) { isAdd[k] = true; left--; } }
+    let cAdd = isAdd.filter(Boolean).length; for (let k = n - 2; k > 0 && cAdd < na; k--) if (!isAdd[k]) { isAdd[k] = true; cAdd++; }
+    idx.forEach(k => out.push({ x: n === 1 ? b / 2 : a + k * (b - 2 * a) / (n - 1), y, d: isAdd[k] ? da : dc, add: isAdd[k], top }));
+  };
+  layer(+rf.tn, +rf.td, +rf.tan, +rf.tad, true); layer(+rf.bn, +rf.bd, +rf.ban, +rf.bad, false);
+  return out;
+}
+function rfCalc(s, Eb) {
+  const rf = ensureRf(s); if (!rf || !s.useRf) return null;
+  const b = +s.b, h = +s.h, al = ES / Eb, bars = rfBars(s);
+  const use = bars.filter(x => s.kind === 'col' || !x.add || rf.inclAdd);
+  const As = d => Math.PI * d * d / 4;
+  const Ab = b * h, sA = use.reduce((a, x) => a + (al - 1) * As(x.d), 0), sAy = use.reduce((a, x) => a + (al - 1) * As(x.d) * x.y, 0);
+  const yc = (Ab * h / 2 + sAy) / (Ab + sA);
+  const Ib = b * h ** 3 / 12, Ired = Ib + Ab * (h / 2 - yc) ** 2 + use.reduce((a, x) => a + (al - 1) * As(x.d) * (x.y - yc) ** 2, 0);
+  const AsT = bars.filter(x => s.kind !== 'col' && x.top && !x.add).reduce((a, x) => a + As(x.d), 0), AsB = bars.filter(x => s.kind !== 'col' && !x.top && !x.add).reduce((a, x) => a + As(x.d), 0);
+  const AsAll = bars.reduce((a, x) => a + As(x.d), 0);
+  // khoảng hở giữa thanh trong lớp
+  const warn = [];
+  if (s.kind !== 'col') [[+rf.tn + +rf.tan, Math.max(+rf.td, +rf.tad), 'trên'], [+rf.bn + +rf.ban, Math.max(+rf.bd, +rf.bad), 'dưới']].forEach(([n, d, nm]) => { if (n > 1) { const gap = (b - 2 * (rf.c + rf.sd) - n * d) / (n - 1); if (gap < Math.max(d, 25)) warn.push(`Lớp ${nm}: khoảng hở giữa các thanh ${fx(gap, 0)} mm < max(Φ, 25) = ${Math.max(d, 25)} mm – cân nhắc bố trí 2 lớp`); } });
+  else { const a = rf.c + rf.sd; const gb = (b - 2 * a - rf.nb * rf.d) / Math.max(1, rf.nb - 1), gh = (h - 2 * a - rf.nh * rf.d) / Math.max(1, rf.nh - 1); if (Math.min(gb, gh) < Math.max(rf.d, 30)) warn.push(`Khoảng hở giữa các thanh ${fx(Math.min(gb, gh), 0)} mm < ${Math.max(rf.d, 30)} mm`); }
+  const h0 = h - (rf.c + rf.sd + (s.kind === 'col' ? rf.d : +rf.bd) / 2);
+  const txt = s.kind === 'col'
+    ? `Thép dọc ${rf.gL}: ${bars.length}Φ${rf.d} (mỗi cạnh b: ${rf.nb} cây, mỗi cạnh h: ${rf.nh} cây, kể cả góc), μ = ${fx(AsAll / Ab * 100, 2)}%; đai ${rf.gS} Φ${rf.sd} a${rf.s1}/${rf.s2}; c = ${rf.c} mm`
+    : `Thép dọc ${rf.gL}: trên ${rf.tn}Φ${rf.td}${+rf.tan ? ` (+${rf.tan}Φ${rf.tad} gối)` : ''}, dưới ${rf.bn}Φ${rf.bd}${+rf.ban ? ` (+${rf.ban}Φ${rf.bad} bụng)` : ''}; μ dưới = ${fx(AsB / (b * h0) * 100, 2)}%, μ trên = ${fx(AsT / (b * h0) * 100, 2)}%; đai ${rf.gS} Φ${rf.sd} a${rf.s1}/${rf.s2}; c = ${rf.c} mm`;
+  return { Ib, Ired, al, yc, bars, use, txt, warn, inc: (Ired / Ib - 1) * 100 };
+}
+function sectionSVG(s, W = 170) {
+  const rf = ensureRf(s); if (!rf) return '';
+  const b = +s.b, h = +s.h, sc = (W - 50) / Math.max(b, h), w = b * sc, hh = h * sc, ox = 34 + ((W - 50) - w) / 2, oy = 14, H = hh + 40;
+  const X = x => ox + x * sc, Y = y => oy + hh - y * sc;
+  let g = `<rect x="${ox}" y="${oy}" width="${w}" height="${hh}" fill="#EEF1F5" stroke="#000" stroke-width="1.2"/>`;
+  const ins = rf.c + rf.sd / 2; g += `<rect x="${X(ins)}" y="${Y(h - ins)}" width="${(b - 2 * ins) * sc}" height="${(h - 2 * ins) * sc}" rx="${3}" fill="none" stroke="#6b7486" stroke-width="${Math.max(0.8, rf.sd * sc)}"/>`;
+  rfBars(s).forEach(x => g += `<circle cx="${X(x.x)}" cy="${Y(x.y)}" r="${Math.max(2, x.d / 2 * sc)}" fill="${x.add ? '#E8A33D' : '#c0392b'}" stroke="#000" stroke-width="0.6"/>`);
+  g += TX(ox + w / 2, oy + hh + 13, `b = ${b}`, '#1d2433', 10) + `<text x="${ox - 6}" y="${oy + hh / 2}" font-size="10" text-anchor="middle" transform="rotate(-90 ${ox - 6} ${oy + hh / 2})" font-family="Inter,Arial">h = ${h}</text>`;
+  const Hs = s.kind !== 'col' ? H + 12 : H;
+  if (s.kind !== 'col') g += `<circle cx="8" cy="${H + 4}" r="3" fill="#c0392b"/>` + TX(14, H + 7.5, 'chạy suốt', '#6b7486', 9, 'start') + `<circle cx="${W / 2 + 10}" cy="${H + 4}" r="3" fill="#E8A33D"/>` + TX(W / 2 + 16, H + 7.5, 'gia cường', '#6b7486', 9, 'start');
+  return `<svg viewBox="0 0 ${W} ${Hs}" width="${W}" height="${Hs}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+function rfForm(s, idx) {
+  const rf = ensureRf(s); if (!rf) return '';
+  const inp = (k, w = 44) => `<input data-rk="${k}" value="${esc(rf[k])}" style="width:${w}px;display:inline-block">`;
+  const dsel = k => { const v = +rf[k]; const list = DIA.some(x => x[0] === v) ? DIA : DIA.concat([[v, '255,255,255']]); return `<select data-rk="${k}" title="Đường kính cốt thép (mm)" style="width:58px;display:inline-block;padding:2px;border:1px solid #b9c1ce;border-radius:3px;background:rgb(${dCol(v)})">${list.map(([d, c]) => `<option value="${d}" style="background:rgb(${c})"${d === v ? ' selected' : ''}>d${d}</option>`).join('')}</select>`; };
+  const sel = (k, list) => `<select data-rs="${k}" class="full">${list.map(g => `<option${g === rf[k] ? ' selected' : ''}>${g}</option>`).join('')}</select>`;
+  const c = s.useRf ? rfCalc(s, MATS.find(m => m[0] === s.mat)[1]) : null;
+  let h = `<div style="margin-top:6px;padding:6px 8px;background:#F6F8FB;border-radius:4px" data-s="${idx}">
+   <label style="display:block;font-size:12px;font-weight:600;color:#2E5597"><input type="checkbox" data-ru="1"${s.useRf ? ' checked' : ''}> Kể cốt thép vào độ cứng (tiết diện quy đổi)</label>`;
+  if (s.useRf) {
+    h += `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px"><div style="flex:1"><div class="form" style="grid-template-columns:auto 96px;gap:3px 6px;font-size:12px">
+      <label>Thép dọc</label>${sel('gL', GL)}<label>Cốt đai</label>${sel('gS', GS)}</div>`;
+    if (s.kind === 'col') h += `<div class="form" style="grid-template-columns:auto auto;gap:3px 6px;font-size:12px">
+      <label>Φ dọc</label><span>${dsel('d')}</span>
+      <label>Cạnh b (kể góc)</label><span>${inp('nb')}</span>
+      <label>Cạnh h (kể góc)</label><span>${inp('nh')}</span></div>`;
+    else h += `<div class="form" style="grid-template-columns:auto auto;gap:3px 6px;font-size:12px">
+      <label>Trên – suốt</label><span>${inp('tn', 32)} Φ ${dsel('td')}</span>
+      <label>Trên – gia cường gối</label><span>${inp('tan', 32)} Φ ${dsel('tad')}</span>
+      <label>Dưới – suốt</label><span>${inp('bn', 32)} Φ ${dsel('bd')}</span>
+      <label>Dưới – gia cường bụng</label><span>${inp('ban', 32)} Φ ${dsel('bad')}</span></div>
+      <label style="display:block;font-size:11px"><input type="checkbox" data-ri="1"${rf.inclAdd ? ' checked' : ''}> Kể thép gia cường vào EJ</label>`;
+    h += `<div class="form" style="grid-template-columns:auto auto;gap:3px 6px;font-size:12px"><label>Đai Φ</label><span>${dsel('sd')}</span><label>a đầu / a giữa</label><span>${inp('s1', 40)} / ${inp('s2', 40)} mm</span><label>Bảo vệ c</label><span>${inp('c', 36)} mm</span></div></div>
+      <div>${sectionSVG(s, 130)}</div></div>
+      <div class="mut" style="font-size:11px">${esc(rf.auto ? '↻ ' + rf.src : 'Đã chỉnh tay (' + rf.src + ')')}${rf.note ? ' · ' + esc(rf.note) : ''} <button data-rsug="1" style="font-size:11px;padding:1px 6px">Đề xuất lại</button></div>`;
+    if (c) h += `<div class="der">α = Es/Eb = ${fx(c.al, 2)} · I<sub>b</sub> = ${fx(c.Ib / 1e4, 0)} cm⁴ → I<sub>red</sub> = ${fx(c.Ired / 1e4, 0)} cm⁴ (+${fx(c.inc, 1)}%)</div>${c.warn.map(w => `<div class="box err" style="font-size:11px;padding:3px 6px">${esc(w)}</div>`).join('')}`;
+  }
+  return h + `</div>`;
+}
+function bindStiff(root, getS, re) {
+  root.querySelectorAll('[data-s]').forEach(f => { const s = getS(f.dataset.s);
+    f.querySelectorAll('[data-rk]').forEach(i => i.onchange = () => { ensureRf(s); s.rf[i.dataset.rk] = +String(i.value).replace(',', '.') || 0; if (!['c', 's1', 's2'].includes(i.dataset.rk)) s.rf.auto = 0; re(); });
+    f.querySelectorAll('[data-rs]').forEach(i => i.onchange = () => { ensureRf(s); s.rf[i.dataset.rs] = i.value; re(); });
+    f.querySelectorAll('[data-ru]').forEach(i => i.onchange = () => { s.useRf = i.checked ? 1 : 0; re(); });
+    f.querySelectorAll('[data-ri]').forEach(i => i.onchange = () => { s.rf.inclAdd = i.checked ? 1 : 0; re(); });
+    f.querySelectorAll('[data-rsug]').forEach(i => i.onclick = () => { s.rf = null; ensureRf(s); re(); });
+  });
+}
+
 function EJof(s) {
   const E = (s.mode === 'EJ') ? null : (s.mat === 'Tùy chọn' ? +s.E : MATS.find(m => m[0] === s.mat)[1]);
   if (s.mode === 'EJ') return { EJ: +s.EJ, txt: `EJ = ${fx(+s.EJ, 0)} kNm² (nhập trực tiếp)` };
+  const c = isRC(s) ? rfCalc(s, E) : null;
+  if (c) { const EJ = E * 1000 * c.Ired * 1e-12; return { EJ, rtxt: c.txt, txt: `${s.mat}: Eb = ${E} MPa · ${s.b}×${s.h} mm · Ib = ${fx(c.Ib / 1e4, 0)} cm⁴; cốt thép Es = 2,0·10⁵ MPa (α = ${fx(c.al, 2)}) → I_red = ${fx(c.Ired / 1e4, 0)} cm⁴ → EJ = Eb·I_red = ${fx(EJ, 0)} kNm²` }; }
   const I = s.mode === 'rect' ? (s.b / 1000) * (s.h / 1000) ** 3 / 12 : s.I * 1e-8;
   const EJ = E * 1000 * I;
-  return { EJ, txt: `${s.mat === 'Tùy chọn' ? 'E' : s.mat}: E = ${E} MPa · ${s.mode === 'rect' ? `${s.b}×${s.h} mm → ` : ''}I = ${fx(I * 1e8, 0)} cm⁴ → EJ = ${fx(EJ, 0)} kNm²` };
+  return { EJ, txt: `${s.mat === 'Tùy chọn' ? 'E' : s.mat}: E = ${E} MPa · ${s.mode === 'rect' ? `${s.b}×${s.h} mm → ` : ''}I = ${fx(I * 1e8, 0)} cm⁴ → EJ = ${fx(EJ, 0)} kNm²${isRC(s) ? ' (bê tông, chưa kể cốt thép)' : ''}` };
 }
 
 // ---------- Danh sách ----------
@@ -1107,7 +1232,7 @@ function stiffForm(s, idx, title) {
    ${s.mode === 'rect' ? `<label>b × h</label><input data-sk="b" value="${s.b}" style="width:50px;display:inline"><span class="u"><input data-sk="h" value="${s.h}" style="width:52px"></span><label></label><span class="u" style="grid-column:2/span 2">mm (h theo phương uốn)</span>` : ''}
    ${s.mode === 'I' ? `<label>I</label><input data-sk="I" value="${s.I}"><span class="u">cm⁴</span>` : ''}
    ${s.mode === 'EJ' ? `<label>EJ</label><input data-sk="EJ" value="${s.EJ}"><span class="u">kNm²</span>` : ''}
-  </div><div class="der">${esc(EJof(s).txt)}</div>`;
+  </div>${rfForm(s, idx)}<div class="der">${esc(EJof(s).txt)}</div>`;
 }
 function itemsTable(items, forPrint) {
   let h = `<table class="rs"><thead><tr><th>Đại lượng</th><th>Công thức (sổ tay)</th><th>Thế số</th><th>Kết quả</th><th>Quy đổi</th><th>Lời giải số</th><th>Lệch</th><th></th></tr></thead><tbody>`;
@@ -1339,6 +1464,7 @@ function bindTH(o) {
     f.querySelectorAll('[data-cf]').forEach(i => i.onchange = () => { const k = i.dataset.cf; if (k === 'tid') { c.tid = i.value; c.vals = {}; if (o.mixed && +f.dataset.ci === 0) { const sc2 = schOf(o); o.cases.slice(1).forEach(cc => { if (!sc2.tids.includes(cc.tid)) { cc.tid = sc2.tids[0]; cc.vals = {}; } }); } } else c[k] = k === 'k' ? num(i.value) : i.value; re(); });
     f.querySelectorAll('[data-cv]').forEach(i => i.onchange = () => { c.vals[i.dataset.cv] = +num(i.value); re(); }); });
   document.querySelectorAll('[data-s]').forEach(f => { const s = o._s1; f.querySelectorAll('[data-sk]').forEach(i => i.onchange = () => { const k = i.dataset.sk; s[k] = ['mode', 'mat'].includes(k) ? i.value : +num(i.value); re(); }); });
+  bindStiff(document.getElementById('main'), () => o._s1, re);
 }
 function reportTH(th) {
   const o = inp(th.t), I = ST.info, full = h => h.replace(/<svg /g, '<svg style="width:100%;height:auto" ');
@@ -1346,7 +1472,7 @@ function reportTH(th) {
   let h = `<div class="pg"><div class="pgi"><div class="phd"><div><div class="t1">${o.mixed ? 'Thuyết minh tổ hợp sơ đồ (cộng tác dụng)' : 'Thuyết minh tổ hợp nội lực'}</div><div class="t2">${GN(th.t.g)}. ${esc(th.t.g)} – ${esc(th.sc.n)}</div></div><div class="logo">PA1Construction<br><span style="font-weight:400">${esc(I.code)}</span></div></div>
    <table class="meta"><tr><td>Công trình: <b>${esc(I.name)}</b></td><td>Hạng mục / cấu kiện: ${esc(I.item)}</td><td style="text-align:right">Ngày: ${new Date().toLocaleDateString('vi-VN')}</td></tr></table>
    <h2>1. ${o.mixed ? 'Sơ đồ tính – các cách bố trí tải' : 'Sơ đồ tính và các trường hợp tải'}</h2>${o.mixed ? th.cs.map(c => `<div class="sm" style="color:${c.color};font-weight:700">${esc(c.c.name)} – ${esc(c.t.n)} · ×${SoDo.fmtN(c.k)}</div><div class="fig">${full(beamSchematic(c.r, 640, null, th.Lt))}</div>`).join('') : `<div class="fig">${full(beamSchematic({ model: th.md }, 640))}</div>`}
-   <div class="sm">${esc(th.sc.n)}: l = ${SoDo.fmtN(o.sh.l)} m${th.sc.sh.includes('a') ? `, a = ${SoDo.fmtN(o.sh.a)} m` : ''}. ${esc(EJof(o._s1).txt)}. Tổ hợp: ${th.cs.map(c => `${SoDo.fmtN(c.k)}·${esc(c.c.name)}`).join(' + ')}. Quy đổi 1 T = ${fx(TF(), 2)} kN.</div>
+   <div class="sm">${esc(th.sc.n)}: l = ${SoDo.fmtN(o.sh.l)} m${th.sc.sh.includes('a') ? `, a = ${SoDo.fmtN(o.sh.a)} m` : ''}. ${esc(EJof(o._s1).txt)}${EJof(o._s1).rtxt ? '. ' + esc(EJof(o._s1).rtxt) : ''}. Tổ hợp: ${th.cs.map(c => `${SoDo.fmtN(c.k)}·${esc(c.c.name)}`).join(' + ')}. Quy đổi 1 T = ${fx(TF(), 2)} kN.</div>
    <h2>2. Nội lực từng ${o.mixed ? 'sơ đồ' : 'trường hợp'} và tổng</h2>${thSummary(th, true).replace(/class="okc">/g, '>').replace(/class="badc">/g, '>')}
    <h2>3. Biểu đồ</h2>${['M', 'V', 'f'].map(k => `<div class="fig">${full(plotTH(th, k, 640, M, 118))}</div>`).join('')}`;
   if (M) h += `<h2>4. Giá trị tại x = ${SoDo.fmtN(M.x)} m</h2><table class="tx"><tr><th>TH</th>${th.cs.map(c => `<th>${esc(c.c.name)} ×${SoDo.fmtN(c.k)}</th>`).join('')}<th>TỔNG</th><th>TỔNG (T)</th></tr><tr><th>Q (kN)</th>${M.per.map(p => `<td>${fx(p.Vr)}</td>`).join('')}<td><b>${fx(M.tot.Vr)}</b></td><td>${fx(M.tot.Vr / TF(), 3)}</td></tr><tr><th>M (kNm)</th>${M.per.map(p => `<td>${fx(p.M)}</td>`).join('')}<td><b>${fx(M.tot.M)}</b></td><td>${fx(M.tot.M / TF(), 3)}</td></tr><tr><th>f (mm)</th>${M.per.map(p => `<td>${fx(p.f, 3)}</td>`).join('')}<td><b>${fx(M.tot.f, 3)}</b></td><td></td></tr></table>`;
@@ -1394,20 +1520,22 @@ function bindForm(t, o) {
   const el = $('#main');
   el.querySelectorAll('[data-k]').forEach(i => { i.onchange = () => { o[i.dataset.k] = i.value; if (o._src) delete o._src[i.dataset.k]; save(); renderMain(); }; const tc = el.querySelector(`.tconv[data-for="${i.dataset.k}"]`); if (tc) i.oninput = () => tc.textContent = '≈ ' + toT(+String(i.value).replace(',', '.'), i.dataset.u); });
   el.querySelectorAll('[data-s]').forEach(f => { const s = f.dataset.s === '1' ? o._s1 : o._s2; f.querySelectorAll('[data-sk]').forEach(i => i.onchange = () => { const k = i.dataset.sk; s[k] = ['mode', 'mat'].includes(k) ? i.value : +String(i.value).replace(',', '.'); save(); renderMain(); }); });
+  bindStiff(el, k => k === '1' ? o._s1 : o._s2, () => { save(); renderMain(); });
 }
 
 // ---------- Thuyết minh ----------
 function reportHTML(r) {
   const t = r.t, o = inp(t), I = ST.info, frame = t.stiff === 'frame';
   const full = h => h.replace(/<svg /g, '<svg style="width:100%;height:auto" ');
-  const sv = frame ? [EJof(o._s1).txt.replace('EJ =', 'EJ₁ ='), EJof(o._s2).txt.replace('EJ =', 'EJ₂ =')] : [EJof(o._s1).txt];
+  const sv = (frame ? [['Cột – J₁', o._s1], ['Dầm – J₂', o._s2]] : [['', o._s1]]).flatMap(([nm, ss]) => { const e = EJof(ss); return [(nm ? nm + ': ' : '') + e.txt].concat(e.rtxt ? [(nm ? nm + ' – ' : '') + e.rtxt] : []); });
+  const secs = (frame ? [o._s1, o._s2] : [o._s1]).map(ss => isRC(ss) && ss.useRf ? sectionSVG(ss, 130).replace('<svg ', '<svg class="sec" ') : '').join('');
   const pars = (t.P || []).filter(([k, , , , , vis]) => !vis || vis(r.v)).map(([k, label, unit, , opts]) => { let val = r.v[k]; if (opts) { const f = opts.find(op => String(Array.isArray(op) ? op[0] : op) === String(val)); val = Array.isArray(f) ? f[1] : f; } return [label, typeof val === 'number' ? SoDo.fmtN(val) : val, unit]; });
   const q = getQ(o, t), mk = computeMk(r, q), M = mk.err ? null : mk;
   let h = `<div class="pg"><div class="pgi">
    <div class="phd"><div><div class="t1">Thuyết minh tính nội lực</div><div class="t2">${GN(t.g)}. ${esc(t.g)} – ${esc(t.n)}</div></div><div class="logo">PA1Construction<br><span style="font-weight:400">${esc(I.code)}</span></div></div>
    <table class="meta"><tr><td>Công trình: <b>${esc(I.name)}</b></td><td>Hạng mục / cấu kiện: ${esc(I.item)}</td><td style="text-align:right">Ngày: ${new Date().toLocaleDateString('vi-VN')}</td></tr></table>
    <div class="row2"><div><h2>1. Sơ đồ tính</h2><div class="fig">${full(frame ? frameSVG(r, null, 420) : beamSchematic(r, 640))}</div><div class="sm">Nguồn công thức: ${esc(t.src)}.${t.note ? ' ' + esc(t.note) : ''}</div></div>
-   <div><h2>2. Số liệu</h2>${t.id === 'LK' ? lkPars(r) : ''}<table${t.id === 'LK' ? ' style="display:none"' : ''}><tr><th>Tham biến</th><th>Giá trị</th><th>Đ.vị</th></tr>${pars.map(p => `<tr><td>${esc(p[0])}</td><td class="n">${esc(p[1])}</td><td>${esc(p[2])}</td></tr>`).join('')}${r.derived.map(d => `<tr><td>${esc(SoDo.pretty(d.s))} = ${esc(SoDo.pretty(d.e))}</td><td class="n">${SoDo.fmtN(d.val)}</td><td>${esc(d.u || '')}</td></tr>`).join('')}</table>${sv.map(x => `<div class="sm">${esc(x)}</div>`).join('')}${Object.entries(o._src || {}).filter(([k, x]) => +o[k] === x.val).map(([k, x]) => `<div class="sm"><b>${esc(k)}</b>: ${esc(x.txt)} – ${esc(x.ref)}</div>`).join('')}</div></div>
+   <div><h2>2. Số liệu</h2>${t.id === 'LK' ? lkPars(r) : ''}<table${t.id === 'LK' ? ' style="display:none"' : ''}><tr><th>Tham biến</th><th>Giá trị</th><th>Đ.vị</th></tr>${pars.map(p => `<tr><td>${esc(p[0])}</td><td class="n">${esc(p[1])}</td><td>${esc(p[2])}</td></tr>`).join('')}${r.derived.map(d => `<tr><td>${esc(SoDo.pretty(d.s))} = ${esc(SoDo.pretty(d.e))}</td><td class="n">${SoDo.fmtN(d.val)}</td><td>${esc(d.u || '')}</td></tr>`).join('')}</table>${secs ? `<div style="display:flex;gap:6px">${secs}</div>` : ''}${sv.map(x => `<div class="sm">${esc(x)}</div>`).join('')}${Object.entries(o._src || {}).filter(([k, x]) => +o[k] === x.val).map(([k, x]) => `<div class="sm"><b>${esc(k)}</b>: ${esc(x.txt)} – ${esc(x.ref)}</div>`).join('')}</div></div>
    ${t.bookErr ? `<div class="box"><b>Hiệu chỉnh sổ tay:</b> ${esc(t.bookErr)}</div>` : ''}
    <h2>3. Nội lực, chuyển vị</h2>${t.id === 'LK' ? lkTable(r) : itemsTable(r.items, true).replace(/class="okc">✔/g, '>Đạt').replace(/class="badc">✖/g, '>Lệch').replace(/<div class="mut" style="font-size:11px">/g, '<div class="sm">')}
    <div class="sm">Quy đổi: 1 T = ${fx(TF(), 2)} kN. Quy ước: M dương căng thớ dưới; phản lực dương hướng lên; f dương hướng xuống. "Lời giải số": kiểm chứng bằng phần tử hữu hạn (PA1 Frame2D v${Frame2D.version}), dung sai 0,5%.</div>

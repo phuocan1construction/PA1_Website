@@ -50,7 +50,7 @@ table.rs td.n{text-align:right;font-family:var(--mono);white-space:nowrap}
 table.rs td.f{font-family:"Cambria Math","Times New Roman",serif;font-size:14px}
 table.rs td.sub{font-family:var(--mono);font-size:11.5px;color:#444;white-space:pre-wrap}
 table.rs tr.hd td{background:#F6F8FB;font-weight:700;color:var(--navy)}
-.okc{color:var(--ok);font-weight:700}.badc{color:var(--bad);font-weight:700}.mut{color:var(--mut)}
+.okc{color:var(--ok);font-weight:700}#rcCard h4{margin:10px 0 4px;font-size:13px;color:#2E5597}.rh4{font-weight:700;color:#2E5597;font-size:8.5pt;margin:3px 0 1px}.badc{color:var(--bad);font-weight:700}.mut{color:var(--mut)}
 svg{display:block;max-width:100%}
 .qx{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .qx input,.qx select{font:inherit;padding:3px 6px;border:1px solid var(--line);border-radius:3px;width:90px}
@@ -786,8 +786,111 @@ svg{display:block;max-width:100%}
     return { ok: true, v, derived, items, model, h, res: h.res };
   }
 
-  const api = { list: T, compute, evalExpr, pretty, subst, fmtN, tmSolve, analyzeModel: analyze };
+  const api = { list: T, compute, evalExpr, pretty, subst, fmtN, tmSolve, analyzeModel: analyze, buildBeam: beam, addLoads };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SoDo = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* PA1 – Kiểm tra cấu kiện dầm BTCT theo TCVN 5574:2018 (tiết diện chữ nhật)
+   Đơn vị nội bộ: N, mm, MPa (N/mm²). Mô-men N·mm. */
+(function (root) {
+  'use strict';
+  // Bảng 6, 7, 10, 11 – bê tông nặng: Rb, Rbt, Rb,ser(=Rb,n), Rbt,ser(=Rbt,n), Eb, φb,cr [>75%, 40–75%, <40%]
+  const CONC = {
+    B15: [8.5, 0.75, 11.0, 1.10, 24000, [2.4, 3.4, 4.8]], B20: [11.5, 0.90, 15.0, 1.35, 27500, [2.0, 2.8, 4.0]],
+    B25: [14.5, 1.05, 18.5, 1.55, 30000, [1.8, 2.5, 3.6]], B30: [17.0, 1.15, 22.0, 1.75, 32500, [1.6, 2.3, 3.2]],
+    B35: [19.5, 1.30, 25.5, 1.95, 34500, [1.5, 2.1, 3.0]], B40: [22.0, 1.40, 29.0, 2.10, 36000, [1.4, 1.9, 2.8]],
+    B45: [25.0, 1.50, 32.0, 2.25, 37000, [1.3, 1.8, 2.6]], B50: [27.5, 1.60, 36.0, 2.45, 38000, [1.2, 1.6, 2.4]],
+    B55: [30.0, 1.70, 39.5, 2.60, 39000, [1.1, 1.5, 2.2]], B60: [33.0, 1.80, 43.0, 2.75, 39500, [1.0, 1.4, 2.0]]
+  };
+  const EB1RED_L = [0.0024, 0.0028, 0.0034]; // Bảng 9 – εb1,red khi tác dụng dài hạn
+  // Bảng 12, 13, 14 – Rs, Rsc, Rsw, Rs,ser(=Rs,n)
+  const STEEL = { 'CB240-T': [210, 210, 170, 240], 'CB300-T': [260, 260, 210, 300], 'CB300-V': [260, 260, 210, 300], 'CB400-V': [350, 350, 280, 400], 'CB500-V': [435, 400, 300, 500] };
+  const ES = 200000;
+  const Ar = d => Math.PI * d * d / 4;
+
+  function materials(concId, gL, gS, hum) {
+    const c = CONC[concId]; if (!c) return null; const sL = STEEL[gL], sS = STEEL[gS];
+    const hi = { hi: 0, mid: 1, lo: 2 }[hum] ?? 1;
+    return { id: concId, Rb: c[0], Rbt: c[1], Rbser: c[2], Rbtser: c[3], Eb: c[4], phi: c[5][hi], eb1redL: EB1RED_L[hi],
+      gL, gS, Rs: sL[0], Rsc: sL[1], Rsser: sL[3], Rsw: sS[2], Es: ES };
+  }
+  // Nhóm thép theo dấu mô-men: pos = căng thớ dưới
+  function groups(bars, h) {
+    const mk = (arr) => { const As = arr.reduce((a, b) => a + Ar(b.d), 0); const y = As ? arr.reduce((a, b) => a + Ar(b.d) * b.y, 0) / As : 0; const ds = arr.length ? arr.reduce((a, b) => a + b.d * b.d, 0) / arr.reduce((a, b) => a + b.d, 0) : 0; return { As, y, ds, n: arr.length, txt: desc(arr) }; };
+    const bot = bars.filter(b => !b.top), top = bars.filter(b => b.top);
+    const P = { t: mk(bot), c: mk(top.filter(b => !b.add)) }, N = { t: mk(top), c: mk(bot.filter(b => !b.add)) };
+    P.a = P.t.y; P.a2 = h - P.c.y; N.a = h - N.t.y; N.a2 = N.c.y;
+    return { pos: P, neg: N };
+  }
+  function desc(arr) { const m = {}; arr.forEach(b => m[b.d] = (m[b.d] || 0) + 1); return Object.keys(m).sort((a, b) => b - a).map(d => `${m[d]}Φ${d}`).join(' + ') || '—'; }
+
+  // 8.1.2.3 – mô-men giới hạn tiết diện chữ nhật
+  function Mu(b, h0, As, As2, a2, M) {
+    const xiR = 0.8 / (1 + (M.Rs / M.Es) / 0.0035);
+    let x = (M.Rs * As - M.Rsc * As2) / (M.Rb * b), note = '', mode = '';
+    if (As <= 0) return { x: 0, xi: 0, xiR, Mu: 0, note: 'Không có cốt thép chịu kéo', mode };
+    if (As2 > 0 && x < 2 * a2) {
+      const x0 = Math.min(M.Rs * As / (M.Rb * b), xiR * h0);
+      const M1 = M.Rs * As * (h0 - a2), M0 = M.Rb * b * x0 * (h0 - 0.5 * x0);
+      return { x: Math.max(x, 0), x0, xi: Math.max(x, 0) / h0, xiR, Mu: Math.max(M1, M0), mode: 'x < 2a′', note: 'x < 2a′ (*x0 = Rs·As/(Rb·b)): Mu = max[Rs·As·(h0 − a′); Rb·b·x0·(h0 − 0,5x0)] (8.1.2.3.6)' };
+    }
+    if (x > xiR * h0) { note = 'ξ > ξR: lấy x = ξR·h0 (8.1.2.3.5) – cốt thép chịu kéo quá nhiều'; x = xiR * h0; mode = 'ξ>ξR'; }
+    return { x, xi: x / h0, xiR, Mu: M.Rb * b * x * (h0 - 0.5 * x) + M.Rsc * As2 * (h0 - a2), note, mode };
+  }
+  // 8.1.3 – lực cắt (điều kiện 88 và 93)
+  function shear(b, h0, sd, sw, Q, M) {
+    const Asw = 2 * Ar(sd), qsw = M.Rsw * Asw / sw, strut = 0.3 * M.Rb * b * h0, Qb1 = 0.5 * M.Rbt * b * h0;
+    const c96 = qsw >= 0.25 * M.Rbt * b, Qsw1 = c96 ? qsw * h0 : 0, Qu = Qb1 + Qsw1;
+    const swmax = Q > 0 ? M.Rbt * b * h0 * h0 / Q : Infinity, swct = Math.min(0.5 * h0, 300);
+    return { Asw, qsw, strut, Qb1, Qsw1, Qu, c96, swmax, swct, okStrut: Q <= strut, okQ: Q <= Qu, okS: sw <= swmax, okCt: sw <= swct + 1e-9 };
+  }
+  // Tiết diện quy đổi không nứt (gốc tọa độ tại thớ chịu kéo)
+  function uncracked(b, h, As, a, As2, a2, al) {
+    const A = b * h, Ared = A + al * (As + As2), S = A * h / 2 + al * As * a + al * As2 * (h - a2), yt = S / Ared;
+    const Ired = b * h ** 3 / 12 + A * (h / 2 - yt) ** 2 + al * As * (yt - a) ** 2 + al * As2 * (h - a2 - yt) ** 2;
+    return { Ared, yt, Ired, W: Ired / yt };
+  }
+  // Tiết diện có vết nứt (8.2.3.3.6, công thức 195/196; 193)
+  function cracked(b, h0, As, As2, a2, as1, as2) {
+    const ms = As / (b * h0), ms2 = As2 / (b * h0), k = ms * as2 + ms2 * as1;
+    const xm = h0 * (Math.sqrt(k * k + 2 * (ms * as2 + ms2 * as1 * a2 / h0)) - k);
+    const I = b * xm ** 3 / 3 + as2 * As * (h0 - xm) ** 2 + as1 * As2 * (xm - a2) ** 2;
+    return { xm, I };
+  }
+  function Mcrc(b, h, G, M) { const u = uncracked(b, h, G.t.As, G.a, G.c.As, G.a2, M.Es / M.Eb); return { ...u, Mcrc: 1.3 * u.W * M.Rbtser }; }
+  // 8.2.2.3 – ứng suất cốt thép và bề rộng vết nứt
+  function sigmaS(b, h0, G, Mv, M) {
+    const Ebred = M.Rbser / 0.0015, as1 = M.Es / Ebred; const c = cracked(b, h0, G.t.As, G.c.As, G.a2, as1, as1);
+    return { s: Mv * (h0 - c.xm) / c.I * as1, xm: c.xm, Ired: c.I, as1 };
+  }
+  function crackWidth(b, h, G, Mv, Mc, uyt, phi1, M) {
+    const h0 = h - G.a, ss = sigmaS(b, h0, G, Mv, M); const sigma = Math.min(ss.s, M.Rsser);
+    const psi = Math.max(0, Math.min(1, 1 - 0.8 * Mc / Mv));
+    const hbt = Math.min(Math.max(uyt, 2 * G.a), 0.5 * h), Abt = b * hbt, ds = G.t.ds;
+    let Ls = 0.5 * Abt / G.t.As * ds; Ls = Math.min(Math.max(Ls, 10 * ds, 100), 40 * ds, 400);
+    const a = phi1 * 0.5 * 1.0 * psi * sigma / M.Es * Ls;
+    return { a, sigma, sraw: ss.s, psi, Ls, Abt, xm: ss.xm, yld: ss.s > M.Rsser };
+  }
+  // Độ cứng D (N·mm²) cho một tiết diện với mô-men Mv (N·mm, có dấu)
+  function stiffness(b, h, GP, GN, Mv, crackedSec, Mc, longT, M) {
+    const G = Mv >= 0 ? GP : GN, h0 = h - G.a;
+    const Eb1 = longT ? M.Eb / (1 + M.phi) : 0.85 * M.Eb;
+    const u = uncracked(b, h, G.t.As, G.a, G.c.As, G.a2, M.Es / Eb1), Du = Eb1 * u.Ired;
+    if (!crackedSec) return { D: Du, cr: false };
+    const Ebred = M.Rbser / (longT ? M.eb1redL : 0.0015), as1 = M.Es / Ebred;
+    const psi = Math.max(0.2, Math.min(1, 1 - 0.8 * Mc / Math.max(Math.abs(Mv), 1e-6)));
+    const c = cracked(b, h0, G.t.As, G.c.As, G.a2, as1, as1 / psi);
+    return { D: Math.min(Ebred * c.I, Du), cr: true, psi };
+  }
+  // Độ võng giới hạn – Bảng M.1 mục 2a (nội suy tuyến tính)
+  function fuLimit(L, room6) { // L (m) -> fu (mm)
+    const pts = [[1, 1 / 120], [3, 1 / 150], [6, 1 / 200], [room6 ? 12 : 24, 1 / 250], [room6 ? 24 : 36, 1 / 300]];
+    if (L <= 1) return L * 1000 / 120; if (L >= pts[4][0]) return L * 1000 / 300;
+    for (let i = 1; i < pts.length; i++) if (L <= pts[i][0]) { const [L0, r0] = pts[i - 1], [L1, r1] = pts[i]; const f0 = L0 * r0, f1 = L1 * r1; return (f0 + (f1 - f0) * (L - L0) / (L1 - L0)) * 1000; }
+  }
+  root.RC5574 = { CONC, STEEL, materials, groups, Mu, shear, uncracked, cracked, Mcrc, sigmaS, crackWidth, stiffness, fuLimit, desc, ES };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -1432,7 +1535,8 @@ function renderTH() {
       <label><b style="color:${col}">${o.mixed ? 'SĐ' : 'TH'} ${i + 1}</b> – tên</label><input data-cf="name" value="${esc(c.name)}" style="background:#fff"><span><button class="x" data-del="${i}" title="Xóa trường hợp">×</button></span>
       <label>${o.mixed ? (i ? 'Bố trí tải' : 'Sơ đồ (liên kết + tải)') : 'Dạng tải'}</label><select data-cf="tid" class="full">${o.mixed && i === 0 ? [...new Set(SCHX.tids.map(id => TT(id).g))].map(g => `<optgroup label="${GN(g)}. ${esc(g)}">${SCHX.tids.filter(id => TT(id).g === g).map(id => `<option value="${id}"${id === c.tid ? ' selected' : ''}>${esc(TT(id).n)}</option>`).join('')}</optgroup>`).join('') : sc.tids.map(id => `<option value="${id}"${id === c.tid ? ' selected' : ''}>${esc(TT(id).n)}</option>`).join('')}</select>
       ${(ct.P || []).filter(p => !sc.sh.includes(p[0])).map(([k, lb, u, def]) => `<label>${esc(lb)}</label><input data-cv="${k}" value="${esc(c.vals[k] ?? def)}"><span class="u">${esc(u)}</span>${TU[u] ? `<span></span><span class="tconv" style="grid-column:2/span 2">≈ ${toT(+String(c.vals[k] ?? def).replace(',', '.'), u)}</span>` : ''}`).join('')}
-      <label>Hệ số tổ hợp</label><input data-cf="k" value="${esc(c.k)}"><span class="u">×</span></div></div>`;
+      <label>Hệ số tổ hợp</label><input data-cf="k" value="${esc(c.k)}"><span class="u">×</span>
+      <label>Loại tải (TCVN 5574)</label><select data-cf="lt" class="full">${LT.map(([v, l]) => `<option value="${v}"${(c.lt || (i ? 'NH' : 'TX')) === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div></div>`;
   });
   L += `<button id="thAdd" class="primary">[+] ${o.mixed ? 'Thêm sơ đồ' : 'Thêm trường hợp'}</button></div>`;
   if (!th.ok) { el.innerHTML = h + `<div class="lay"><div>${L}</div><div><div class="box err">✖ ${esc(th.error)}</div></div></div>`; bindTH(o); el.scrollTop = sy; return; }
@@ -1447,8 +1551,9 @@ function renderTH() {
   Rt += `<div class="card"><h3>Biểu đồ – từng trường hợp và tổng</h3>${plotTH(th, 'M', 640, M) + plotTH(th, 'V', 640, M) + plotTH(th, 'f', 640, M)}</div>`;
   h += `<div class="lay"><div>${L}</div><div>${Rt}</div></div>`;
   h += `<div class="card"><h3>Kết quả – từng ${o.mixed ? 'sơ đồ' : 'trường hợp'} (đã nhân hệ số) và tổng</h3>${thSummary(th)}</div>`;
+  if (th.ok) h += rcCard(t, o, th);
   h += `<div class="card"><h3>Chi tiết công thức từng trường hợp (chưa nhân hệ số)</h3>${th.cs.map(c => `<details><summary style="cursor:pointer;padding:4px 0"><b style="color:${c.color}">${esc(c.c.name)}</b> – ${esc(c.t.n)} ${verdict(c.r.items).replace(/<\/?div[^>]*>/g, '')}</summary>${itemsTable(c.r.items)}</details>`).join('')}</div>`;
-  el.innerHTML = h; bindTH(o); el.scrollTop = sy;
+  el.innerHTML = h; bindTH(o); bindRC(o); el.scrollTop = sy;
   const setX = v => { q.x = v; save(); renderMain(); };
   $('#qGo').onclick = () => setX($('#qx').value); $('#qx').onchange = () => setX($('#qx').value);
   el.querySelectorAll('svg.xs').forEach(sv => { const toX = e => { const rc = sv.getBoundingClientRect(), W = +sv.dataset.w, pad = +sv.dataset.pad, Lt = +sv.dataset.lt; const px = (e.clientX - rc.left) * W / rc.width; return Math.max(0, Math.min(Lt, Math.round((px - pad) / (W - 2 * pad) * Lt * 100) / 100)); }; sv.onmousedown = e => { e.preventDefault(); DRAG = toX; setX(toX(e)); }; });
@@ -1476,8 +1581,171 @@ function reportTH(th) {
    <h2>2. Nội lực từng ${o.mixed ? 'sơ đồ' : 'trường hợp'} và tổng</h2>${thSummary(th, true).replace(/class="okc">/g, '>').replace(/class="badc">/g, '>')}
    <h2>3. Biểu đồ</h2>${['M', 'V', 'f'].map(k => `<div class="fig">${full(plotTH(th, k, 640, M, 118))}</div>`).join('')}`;
   if (M) h += `<h2>4. Giá trị tại x = ${SoDo.fmtN(M.x)} m</h2><table class="tx"><tr><th>TH</th>${th.cs.map(c => `<th>${esc(c.c.name)} ×${SoDo.fmtN(c.k)}</th>`).join('')}<th>TỔNG</th><th>TỔNG (T)</th></tr><tr><th>Q (kN)</th>${M.per.map(p => `<td>${fx(p.Vr)}</td>`).join('')}<td><b>${fx(M.tot.Vr)}</b></td><td>${fx(M.tot.Vr / TF(), 3)}</td></tr><tr><th>M (kNm)</th>${M.per.map(p => `<td>${fx(p.M)}</td>`).join('')}<td><b>${fx(M.tot.M)}</b></td><td>${fx(M.tot.M / TF(), 3)}</td></tr><tr><th>f (mm)</th>${M.per.map(p => `<td>${fx(p.f, 3)}</td>`).join('')}<td><b>${fx(M.tot.f, 3)}</b></td><td></td></tr></table>`;
+  { const rc = rcCard(th.t, o, th, true); if (rc) h += `<h2>${M ? 5 : 4}. Kiểm tra cấu kiện dầm BTCT theo TCVN 5574:2018</h2>${rcPrint(rc)}`; }
   h += `<div class="sign"><div><b>NGƯỜI TÍNH</b><br><br><br>${esc(I.calc)}</div><div><b>NGƯỜI KIỂM</b><br><br><br>${esc(I.check)}</div><div><b>CHỦ TRÌ</b><br><br><br>${esc(I.lead)}</div></div><div class="ft">PA1Construction · ${esc(I.code)} · PA1 Sơ đồ mẫu – Tổ hợp tải · ${new Date().toLocaleString('vi-VN')}</div></div></div>`;
   return h;
+}
+
+// ================= KIỂM TRA TCVN 5574:2018 =================
+const LT = [['TX', 'Thường xuyên'], ['DH', 'Tạm thời dài hạn'], ['NH', 'Tạm thời ngắn hạn']];
+function chkState(o) { o._chk = Object.assign({ hum: 'mid', gf: 1.2, psi: 1, psiP: 0.35, perm: 0, room6: 0 }, o._chk || {}); return o._chk; }
+const kNm = v => v / 1e6, kN = v => v / 1e3;
+function refineModel(model, beamIds, nsub) {
+  const nd = id => model.nodes.find(n => String(n.id) === String(id));
+  const m = { ...JSON.parse(JSON.stringify(model)), members: [], memberLoads: [], nodes: model.nodes.map(n => ({ ...n })), sections: JSON.parse(JSON.stringify(model.sections)) };
+  model.members.forEach(mb => {
+    const a = nd(mb.i), b = nd(mb.j), isB = beamIds.includes(mb.id), n = isB ? nsub : 4; let prev = mb.i;
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, nid = k === n ? mb.j : `${mb.id}~${k}`;
+      if (k < n) m.nodes.push({ id: nid, x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+      const sid = `${mb.id}#${k}`; m.members.push({ id: sid, i: prev, j: nid, mat: mb.mat, sec: isB ? sid : mb.sec, nseg: 4, _par: mb.id, _t0: (k - 1) / n, _t1: t, _beam: isB, relI: k === 1 ? mb.relI : 0, relJ: k === n ? mb.relJ : 0 });
+      if (isB) m.sections.push({ id: sid, shape: 'CUSTOM', A: 1e4, I: 1e-4 }); prev = nid;
+    }
+  });
+  model.memberLoads.forEach(l => {
+    const subs = m.members.filter(s => s._par === l.member);
+    if (l.type === 'P') { const t = +l.a || 0; const s = subs.find(s => t >= s._t0 - 1e-9 && t <= s._t1 + 1e-9); m.memberLoads.push({ ...l, member: s.id, a: (t - s._t0) / (s._t1 - s._t0) }); return; }
+    const a = l.a === '' || l.a == null ? 0 : +l.a, bb = l.b === '' || l.b == null ? 1 : +l.b, w1 = +l.w1 || 0, w2 = l.w2 === '' || l.w2 == null ? w1 : +l.w2;
+    const w = t => bb - a > 1e-12 ? w1 + (w2 - w1) * (t - a) / (bb - a) : w1;
+    subs.forEach(s => { const lo = Math.max(a, s._t0), hi = Math.min(bb, s._t1); if (hi - lo > 1e-9) m.memberLoads.push({ ...l, member: s.id, a: (lo - s._t0) / (s._t1 - s._t0), b: (hi - s._t0) / (s._t1 - s._t0), w1: w(lo), w2: w(hi) }); });
+  });
+  return m;
+}
+function beamStations(res, model, beamIds) { // [{k(member idx), x, M, V}]
+  const out = []; res.members.forEach((mr, k) => { if (!beamIds.includes(model.members[k].id)) return; mr.stations.forEach(p => out.push({ k, x: p.x, M: p.M, V: p.V })); }); return out;
+}
+function interpSt(st, x, key) { for (let q = 1; q < st.length; q++) if (st[q].x >= x - 1e-12) { const a = st[q - 1], b = st[q], d = b.x - a.x; return d < 1e-12 ? b[key] : a[key] + (b[key] - a[key]) * (x - a.x) / d; } return st[st.length - 1][key]; }
+// ctx: {s, model, beamIds, facFull, facLong, uls:{Mpos, Mneg, Q} (kNm, kN), chk}
+function rcRun(ctx) {
+  const s = ctx.s, chk = ctx.chk;
+  if (!isRC(s)) return { err: 'Kiểm tra TCVN 5574:2018 áp dụng cho tiết diện bê tông cốt thép chữ nhật: chọn vật liệu bê tông B15–B60 và "Vật liệu + tiết diện chữ nhật".' };
+  ensureRf(s); if (!s.useRf) return { err: 'Bật "Kể cốt thép vào độ cứng" và khai báo cốt thép để kiểm tra.' };
+  const rf = s.rf, b = +s.b, h = +s.h, M = RC5574.materials(s.mat, rf.gL, rf.gS, chk.hum); if (!M) return { err: 'Chưa có số liệu vật liệu ' + s.mat };
+  const bars = rfBars(s), G = RC5574.groups(bars, h), out = { M, b, h, G, rf };
+  // ---- TTGH I: uốn
+  out.bend = [];
+  [['pos', ctx.uls.Mpos, 'Nhịp – M dương (căng dưới)'], ['neg', -ctx.uls.Mneg, 'Gối – M âm (căng trên)']].forEach(([k, Mv, nm]) => {
+    if (!(Mv > 1e-6)) return; const g = G[k], h0 = h - g.a, r = RC5574.Mu(b, h0, g.t.As, g.c.As, g.a2, M);
+    out.bend.push({ k, nm, Mv, h0, g, r, ok: Mv * 1e6 <= r.Mu * (1 + 1e-9) });
+  });
+  // ---- TTGH I: cắt
+  const h0s = Math.min(h - G.pos.a, G.neg.t.As ? h - G.neg.a : h - G.pos.a);
+  out.sh = { Q: ctx.uls.Q, h0: h0s, ...RC5574.shear(b, h0s, rf.sd, rf.s1, ctx.uls.Q * 1e3, M) }; out.sh.ok = out.sh.okStrut && out.sh.okQ && out.sh.okS;
+  // ---- TTGH II: nội lực tiêu chuẩn (đàn hồi)
+  const hF = SoDo.analyzeModel(JSON.parse(JSON.stringify(ctx.model)), ctx.facFull), hL = SoDo.analyzeModel(JSON.parse(JSON.stringify(ctx.model)), ctx.facLong);
+  const stF = beamStations(hF.res, ctx.model, ctx.beamIds);
+  const pick = sg => stF.reduce((bst, p) => (sg * p.M > sg * (bst ? bst.M : 0) ? p : bst), null);
+  const Mc = { pos: RC5574.Mcrc(b, h, G.pos, M), neg: RC5574.Mcrc(b, h, G.neg, M) };
+  out.Mc = Mc; out.crack = [];
+  const lim = chk.perm ? [0.2, 0.3] : [0.3, 0.4];
+  [['pos', 1, 'Nhịp – M dương'], ['neg', -1, 'Gối – M âm']].forEach(([k, sg, nm]) => {
+    const p = pick(sg); if (!p) return; const Mf = sg * p.M * 1e6; if (Mf <= 1e-3) return;
+    const Ml = sg * interpSt(hL.res.members[p.k].stations, p.x, 'M') * 1e6;
+    const g = G[k], mc = Mc[k].Mcrc, row = { k, nm, Mf, Ml, Mcrc: mc, cracked: Mf > mc, member: ctx.model.members[p.k].id, x: p.x };
+    if (row.cracked && g.t.As > 0) {
+      const yt = Mc[k].yt;
+      row.a1 = Ml > 0 ? RC5574.crackWidth(b, h, g, Ml, mc, yt, 1.4, M) : null;
+      row.a2 = RC5574.crackWidth(b, h, g, Mf, mc, yt, 1.0, M);
+      row.a3 = Ml > 0 ? RC5574.crackWidth(b, h, g, Ml, mc, yt, 1.0, M) : null;
+      row.long = row.a1 ? row.a1.a : 0; row.short = row.long + row.a2.a - (row.a3 ? row.a3.a : 0);
+      row.okL = row.long <= lim[0] + 1e-9; row.okS = row.short <= lim[1] + 1e-9;
+    }
+    out.crack.push(row);
+  });
+  out.lim = lim;
+  // ---- TTGH II: độ võng – độ cứng D thay đổi dọc dầm (8.2.3.3), 3 lần tính theo (186)
+  const m2 = refineModel(ctx.model, ctx.beamIds, 16), subs = m2.members.map((mb, i) => ({ mb, i })).filter(x => x.mb._beam);
+  const Dof = (Mk, crk, longT) => RC5574.stiffness(b, h, G.pos, G.neg, Mk * 1e6, crk, Mk >= 0 ? Mc.pos.Mcrc : Mc.neg.Mcrc, longT, M);
+  const setD = Ds => subs.forEach((x, q) => { m2.sections.find(sc => sc.id === x.mb.sec).I = Ds[q] * 1e-9 / 1e6; });
+  const midM = res => subs.map(x => { const st = res.members[x.i].stations; return st[Math.floor(st.length / 2)].M; });
+  // vết nứt hình thành dưới toàn bộ tải: xác định theo M đàn hồi
+  setD(subs.map(() => Dof(0, false, false).D)); const resE = SoDo.analyzeModel(m2, ctx.facFull).res; const Me = midM(resE);
+  const crk = Me.map(Mk => Mk >= 0 ? Mk * 1e6 > Mc.pos.Mcrc : -Mk * 1e6 > Mc.neg.Mcrc);
+  const run = (fac, longT) => { let Ds = subs.map((x, q) => Dof(Me[q], crk[q], longT).D), res; for (let it = 0; it < 5; it++) { setD(Ds); res = SoDo.analyzeModel(m2, fac).res; const Mm = midM(res); Ds = Mm.map((Mk, q) => Dof(Mk, crk[q], longT).D); } setD(Ds); res = SoDo.analyzeModel(m2, fac).res; return { res, Ds }; };
+  const r1 = run(ctx.facFull, false), r2 = run(ctx.facLong, false), r3 = run(ctx.facLong, true);
+  const uz = (r, id) => r.res.nodes.find(n => String(n.id) === String(id)).uz;
+  const w = id => (uz(r1, id) - uz(r2, id) + uz(r3, id)) * 1000, wl = id => uz(r3, id) * 1000;
+  const sup = new Set(ctx.model.supports.map(s2 => String(s2.node))), deg = {}; ctx.model.members.forEach(mb => { deg[mb.i] = (deg[mb.i] || 0) + 1; deg[mb.j] = (deg[mb.j] || 0) + 1; });
+  const isFree = id => !sup.has(String(id)) && deg[id] === 1;
+  const nd = id => ctx.model.nodes.find(n => String(n.id) === String(id));
+  out.defl = ctx.model.members.filter(mb => ctx.beamIds.includes(mb.id)).map(mb => {
+    const ids = [mb.i, ...m2.members.filter(x => x._par === mb.id).map(x => x.j)], L = Math.hypot(nd(mb.j).x - nd(mb.i).x, nd(mb.j).z - nd(mb.i).z);
+    const fr = isFree(mb.i) ? mb.i : isFree(mb.j) ? mb.j : null;
+    const meas = fn => { if (fr) { const s0 = fr === mb.i ? mb.j : mb.i; return { f: -(fn(fr) - fn(s0)), x: fr === mb.i ? 0 : L }; } const wi = fn(mb.i), wj = fn(mb.j); let best = { f: 0, x: 0 }; ids.forEach((id, q) => { const t = q / (ids.length - 1), d = -(fn(id) - (wi + (wj - wi) * t)); if (Math.abs(d) > Math.abs(best.f)) best = { f: d, x: t * L }; }); return best; };
+    const ft = meas(w), fl = meas(wl), Le = fr ? 2 * L : L, fu = RC5574.fuLimit(Le, chk.room6);
+    return { id: mb.id, L, console: !!fr, Le, ft, fl, fu, ok: Math.abs(fl.f) <= fu + 1e-9, ncr: crk.filter((c, q) => subs[q].mb._par === mb.id && c).length, nsub: subs.filter(x => x.mb._par === mb.id).length, Lh: L * 1000 / h };
+  });
+  const Dr = r1.Ds.concat(r3.Ds); out.D = { uncrS: Dof(0.001, false, false).D, uncrL: Dof(0.001, false, true).D, min: Math.min(...Dr), max: Math.max(...Dr) };
+  out.ok = out.bend.every(x => x.ok) && out.sh.ok && out.crack.every(c => !c.cracked || (c.okL && c.okS)) && out.defl.every(d => d.ok);
+  return out;
+}
+function rcCtx(t, o, r) { // trả về ctx hoặc null cho sơ đồ hiện tại
+  const chk = chkState(o);
+  if (t.id === 'TH' || t.id === 'THS') {
+    const th = r; if (!th || !th.ok) return null;
+    let md = th.md; if (!md) { const m0 = th.cs[0].r.model, ids = m0.members.map(m => m.id).join('|'); if (th.cs.some(x => x.r.model.members.map(m => m.id).join('|') !== ids || Math.abs(x.L - th.cs[0].L) > 1e-9)) return { na: 'Các sơ đồ có hình học khác nhau – không lập được mô hình chung để kiểm tra.' };
+      md = JSON.parse(JSON.stringify(m0)); md.memberLoads = []; md.nodalLoads = []; md.loadCases = []; th.cs.forEach((x, i) => { md.loadCases.push({ id: 'C' + (i + 1) }); x.r.model.memberLoads.forEach(l => md.memberLoads.push({ ...l, lc: 'C' + (i + 1) })); (x.r.model.nodalLoads || []).forEach(l => md.nodalLoads.push({ ...l, lc: 'C' + (i + 1) })); }); }
+    const facFull = {}, facLong = {}; th.cs.forEach((c, i) => { const id = 'C' + (i + 1), lt = c.c.lt || (i ? 'NH' : 'TX'); facFull[id] = 1; facLong[id] = lt === 'NH' ? 0 : 1; });
+    const e = th.ext, Q = Math.max(Math.abs(e.Vmax.V), Math.abs(e.Vmin.V));
+    return { s: o._s1, model: md, beamIds: md.members.map(m => m.id), facFull, facLong, uls: { Mpos: Math.max(0, e.Mmax.M), Mneg: Math.min(0, e.Mmin.M), Q }, chk, ulsTxt: 'Nội lực tính toán = tổng tổ hợp Σ(hệ số × TH)', slsTxt: 'Tải tiêu chuẩn: toàn bộ = Σ TH; dài hạn = TH thường xuyên + tạm thời dài hạn' };
+  }
+  if (!r || !r.ok) return null;
+  const frame = t.stiff === 'frame'; if (frame && t.id !== 'K1' && t.id !== 'K3') return { na: 'Kiểm tra dầm khung áp dụng cho K1, K3 (tải đứng trên dầm). Cột chịu nén lệch tâm – chưa có trong phiên bản này.' };
+  const beamIds = frame ? ['Dầm'] : r.model.members.map(m => m.id), gf = +chk.gf || 1;
+  let facFull = { L: 1 }, facLong = { L: +chk.psi }, uls;
+  const ext = (h) => { const st = beamStations(h.res, r.model, beamIds); return { Mpos: Math.max(0, ...st.map(p => p.M)), Mneg: Math.min(0, ...st.map(p => p.M)), Q: Math.max(...st.map(p => Math.abs(p.V))) }; };
+  if (t.id === 'LK') {
+    const n = +r.v.n; facFull = { G: 1 }; facLong = { G: 1 }; for (let i = 1; i <= n; i++) { facFull['P' + i] = 1; facLong['P' + i] = +chk.psiP; }
+    const pats = []; for (let i = 0; i < n; i++) pats.push([...Array(n)].map((_, j) => (j % 2) === (i % 2)));
+    for (let i = 1; i < n; i++) pats.push([...Array(n)].map((_, j) => j === i - 1 || j === i || (j < i - 1 && (i - 1 - j) % 2 === 0) || (j > i && (j - i) % 2 === 0)));
+    pats.push([...Array(n)].map(() => true));
+    const es = pats.map(on => { const f = { G: 1 }; on.forEach((x, i) => { if (x) f['P' + (i + 1)] = 1; }); return ext(r.h.case(f)); });
+    uls = { Mpos: gf * Math.max(...es.map(e => e.Mpos)), Mneg: gf * Math.min(...es.map(e => e.Mneg)), Q: gf * Math.max(...es.map(e => e.Q)) };
+  } else { const e = ext(r.h); uls = { Mpos: gf * e.Mpos, Mneg: gf * e.Mneg, Q: gf * e.Q }; }
+  return { s: frame ? o._s2 : o._s1, model: r.model, beamIds, facFull, facLong, uls, chk, ulsTxt: `Nội lực tính toán = γf × nội lực do tải nhập (tiêu chuẩn), γf = ${SoDo.fmtN(gf)}${t.id === 'LK' ? ', bao hoạt tải bất lợi' : ''}`, slsTxt: t.id === 'LK' ? `Tải tiêu chuẩn: toàn bộ = g + p; dài hạn = g + ${SoDo.fmtN(+chk.psiP)}·p` : `Tải tiêu chuẩn = tải nhập; phần dài hạn ψ = ${SoDo.fmtN(+chk.psi)}` };
+}
+const OKB = ok => ok ? '<span class="okc">Đạt</span>' : '<span class="badc">Không đạt</span>';
+function rcCard(t, o, r, forPrint) {
+  const ctx = rcCtx(t, o, r); if (!ctx) return '';
+  const chk = chkState(o), single = !(t.id === 'TH' || t.id === 'THS');
+  let h = forPrint ? '' : `<div class="card" id="rcCard"><h3>Kiểm tra cấu kiện dầm BTCT theo TCVN 5574:2018</h3>
+   <div class="qx" style="flex-wrap:wrap">Độ ẩm môi trường <select id="ckH" style="width:auto">${[['hi', 'Trên 75%'], ['mid', '40 – 75%'], ['lo', 'Dưới 40%']].map(([v, l]) => `<option value="${v}"${chk.hum === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
+   ${single ? `γf (tải nhập là tiêu chuẩn) <input id="ckG" value="${esc(chk.gf)}" style="width:50px">${t.id === 'LK' ? `Phần dài hạn của hoạt tải p <input id="ckP" value="${esc(chk.psiP)}" style="width:50px">` : `Phần dài hạn ψ <input id="ckS" value="${esc(chk.psi)}" style="width:50px">`}` : '<span class="mut">Loại tải (thường xuyên / dài hạn / ngắn hạn) chọn ở từng TH</span>'}
+   <label class="tg"><input type="checkbox" id="ckW"${chk.perm ? ' checked' : ''}> Hạn chế thấm</label><label class="tg"><input type="checkbox" id="ckR"${chk.room6 ? ' checked' : ''}> Chiều cao phòng ≤ 6 m</label></div>`;
+  if (ctx.na) return h + `<div class="box note">${esc(ctx.na)}</div>` + (forPrint ? '' : '</div>');
+  let R5; try { R5 = rcRun(ctx); } catch (e) { R5 = { err: 'Lỗi tính: ' + e.message }; }
+  if (R5.err) return h + `<div class="box err">${esc(R5.err)}</div>` + (forPrint ? '' : '</div>');
+  const M = R5.M, f2 = (v, d = 2) => fx(v, d);
+  h += `<div class="box ${R5.ok ? 'ok' : 'err'}" style="font-weight:600">${R5.ok ? '✔ Cấu kiện ĐẠT các yêu cầu kiểm tra' : '✖ Cấu kiện KHÔNG ĐẠT – xem các mục đánh dấu đỏ'} (độ bền uốn, cắt; bề rộng vết nứt; độ võng)</div>
+   <div class="sm mut" style="font-size:11.5px">${esc(ctx.ulsTxt)}. ${esc(ctx.slsTxt)}. Vật liệu: ${M.id} – Rb = ${f2(M.Rb, 1)}, Rbt = ${f2(M.Rbt)}, Rb,ser = ${f2(M.Rbser, 1)}, Rbt,ser = ${f2(M.Rbtser)}, Eb = ${M.Eb} MPa, φb,cr = ${f2(M.phi, 1)}; thép dọc ${M.gL}: Rs = Rsc = ${M.Rs}${M.Rsc !== M.Rs ? '/' + M.Rsc : ''}, Rs,ser = ${M.Rsser} MPa; đai ${M.gS}: Rsw = ${M.Rsw} MPa; Es = 2,0·10⁵ MPa (Bảng 6, 7, 10, 11, 12–14).</div>`;
+  // 1. uốn
+  h += `<h4>1. Độ bền tiết diện thẳng góc (8.1.2.2, 8.1.2.3)</h4><table class="rs"><tr><th>Tiết diện</th><th>Cốt thép chịu kéo / nén</th><th>h0 (mm)</th><th>x (mm)</th><th>ξ / ξR</th><th>M (kNm)</th><th>Mu (kNm)</th><th>M/Mu</th><th></th></tr>`;
+  R5.bend.forEach(x => h += `<tr><td>${x.nm}</td><td>${x.g.t.txt} (As = ${f2(x.g.t.As / 100)} cm²) / ${x.g.c.txt} (A′s = ${f2(x.g.c.As / 100)} cm²)</td><td class="n">${f2(x.h0, 0)}</td><td class="n">${x.r.mode === 'x < 2a′' ? f2(x.r.x0, 1) + '*' : f2(x.r.x, 1)}</td><td class="n">${f2(x.r.xi, 3)} / ${f2(x.r.xiR, 3)}</td><td class="n">${f2(x.Mv)}</td><td class="n">${f2(kNm(x.r.Mu))}</td><td class="n">${f2(x.Mv / kNm(x.r.Mu), 2)}</td><td>${OKB(x.ok)}${x.r.note ? `<div class="mut" style="font-size:10.5px">${esc(x.r.note)}</div>` : ''}</td></tr>`);
+  h += `</table><div class="sm mut" style="font-size:11px">Mu = Rb·b·x·(h0 − 0,5x) + Rsc·A′s·(h0 − a′); x = (Rs·As − Rsc·A′s)/(Rb·b); ξR = 0,8/(1 + εs,el/εb2), εb2 = 0,0035.</div>`;
+  // 2. cắt
+  const S = R5.sh;
+  h += `<h4>2. Độ bền chịu cắt (8.1.3.2, 8.1.3.3 – điều kiện 88, 93)</h4><table class="rs"><tr><th>Q (kN)</th><th>0,3·Rb·b·h0 (kN)</th><th>Qb,1 = 0,5·Rbt·b·h0</th><th>qsw = Rsw·Asw/sw (N/mm)</th><th>Qsw,1 = qsw·h0</th><th>Qb,1 + Qsw,1 (kN)</th><th>sw / sw,max / cấu tạo (mm)</th><th></th></tr>
+   <tr><td class="n">${f2(S.Q)}</td><td class="n">${f2(kN(S.strut))} ${S.okStrut ? '' : '✖'}</td><td class="n">${f2(kN(S.Qb1))}</td><td class="n">${f2(S.qsw, 1)} (đai 2 nhánh Φ${R5.rf.sd}, a${R5.rf.s1})${S.c96 ? '' : ' <span class="badc">qsw < 0,25Rbt·b – không kể đai</span>'}</td><td class="n">${f2(kN(S.Qsw1))}</td><td class="n">${f2(kN(S.Qu))} ${S.okQ ? '' : '✖'}</td><td class="n">${R5.rf.s1} / ${f2(S.swmax, 0)} / ${f2(S.swct, 0)}${S.okCt ? '' : ' <span class="badc">> cấu tạo</span>'}</td><td>${OKB(S.ok)}</td></tr></table>`;
+  // 3. nứt
+  h += `<h4>3. Hình thành và bề rộng vết nứt (8.2.2.2, 8.2.2.3, Bảng 17)</h4><table class="rs"><tr><th>Tiết diện</th><th>M toàn phần / dài hạn (kNm)</th><th>Mcrc = 1,3·Wred·Rbt,ser (kNm)</th><th>Nứt?</th><th>σs (MPa)</th><th>ψs</th><th>Ls (mm)</th><th>acrc dài hạn (mm)</th><th>acrc ngắn hạn (mm)</th><th></th></tr>`;
+  R5.crack.forEach(c => h += `<tr><td>${c.nm}<div class="mut" style="font-size:10.5px">${esc(c.member)}, x = ${SoDo.fmtN(+c.x.toFixed(3))} m</div></td><td class="n">${f2(kNm(c.Mf))} / ${f2(kNm(c.Ml))}</td><td class="n">${f2(kNm(c.Mcrc))}</td><td>${c.cracked ? '<b>Có nứt</b>' : 'Không nứt'}</td>${c.cracked ? `<td class="n">${f2(c.a2.sigma, 0)}${c.a2.yld ? ' <span class="badc">> Rs,ser</span>' : ''}</td><td class="n">${f2(c.a2.psi, 2)}</td><td class="n">${f2(c.a2.Ls, 0)}</td><td class="n">${f2(c.long, 3)} ≤ ${R5.lim[0]}</td><td class="n">${f2(c.short, 3)} ≤ ${R5.lim[1]}</td><td>${OKB(c.okL && c.okS)}</td>` : '<td colspan="5" class="mut">M ≤ Mcrc – không hình thành vết nứt thẳng góc</td><td><span class="okc">Đạt</span></td>'}</tr>`);
+  h += `</table><div class="sm mut" style="font-size:11px">acrc = φ1·φ2·φ3·ψs·(σs/Es)·Ls; φ1 = 1,4 (dài hạn)/1,0 (ngắn hạn), φ2 = 0,5 (thép có gân), φ3 = 1,0; acrc,ngắn hạn = acrc,1 + acrc,2 − acrc,3; giới hạn ${chk.perm ? 'hạn chế thấm' : 'bảo vệ cốt thép'}: ${R5.lim[0]} / ${R5.lim[1]} mm.</div>`;
+  // 4. võng
+  h += `<h4>4. Độ võng (8.2.3, độ cứng D theo 8.2.3.3.4–8.2.3.3.5; giới hạn Bảng M.1 mục 2a)</h4><table class="rs"><tr><th>Đoạn dầm</th><th>L (m)</th><th>Đoạn có nứt</th><th>f toàn phần (mm)</th><th>f dài hạn – TX + DH (mm)</th><th>fu = L/…</th><th>fu (mm)</th><th></th></tr>`;
+  R5.defl.forEach(d => h += `<tr><td>${esc(d.id)}${d.console ? ' (console, L tính = 2l)' : ''}</td><td class="n">${f2(d.L, 2)}</td><td class="n">${d.ncr}/${d.nsub}</td><td class="n">${f2(d.ft.f, 2)}</td><td class="n"><b>${f2(d.fl.f, 2)}</b> (L/${Math.abs(d.fl.f) > 1e-6 ? f2(d.L * 1000 / Math.abs(d.fl.f), 0) : '∞'})</td><td class="n">L/${f2(d.Le * 1000 / d.fu, 0)}</td><td class="n">${f2(d.fu, 1)}</td><td>${OKB(d.ok)}${d.Lh < 10 ? '<div class="mut" style="font-size:10.5px">L/h < 10: cần kể thêm biến dạng trượt (8.2.3.2.5)</div>' : ''}</td></tr>`);
+  h += `</table><div class="sm mut" style="font-size:11px">Độ võng tính bằng PTHH với độ cứng D thay đổi dọc dầm (mỗi nhịp chia 16 đoạn, lặp theo mô-men): đoạn không nứt D = Eb1·Ired (Eb1 = 0,85Eb ngắn hạn; Eb/(1+φb,cr) dài hạn); đoạn có nứt D = Eb,red·Ired (Eb,red = Rb,ser/εb1,red; αs2 = αs1/ψs). f toàn phần = f1(ngắn hạn, toàn bộ tải) − f2(ngắn hạn, tải dài hạn) + f3(dài hạn, tải dài hạn) – công thức (186). Kiểm tra thẩm mỹ theo M.1 mục 2a với tải thường xuyên + tạm thời dài hạn. D = ${f2(R5.D.min * 1e-9, 0)} … ${f2(R5.D.max * 1e-9, 0)} kNm² (không nứt: ${f2(R5.D.uncrS * 1e-9, 0)} ngắn hạn, ${f2(R5.D.uncrL * 1e-9, 0)} dài hạn).</div>`;
+  return h + (forPrint ? '' : '</div>');
+}
+function rcPrint(h) { return h.replace(/<h4>/g, '<div class="rh4">').replace(/<\/h4>/g, '</div>').replace(/class="box (ok|err)" style="font-weight:600"/g, 'class="sm" style="font-weight:700;color:$1"').replace('color:ok', 'color:#1b7a3d').replace('color:err', 'color:#C00000'); }
+function bindRC(o) {
+  const c = chkState(o), re = () => { save(); renderMain(); }, n = v => +String(v).replace(',', '.');
+  if (!$('#ckH')) return;
+  $('#ckH').onchange = e => { c.hum = e.target.value; re(); };
+  if ($('#ckG')) $('#ckG').onchange = e => { c.gf = n(e.target.value) || 1; re(); };
+  if ($('#ckS')) $('#ckS').onchange = e => { c.psi = Math.max(0, Math.min(1, n(e.target.value))); re(); };
+  if ($('#ckP')) $('#ckP').onchange = e => { c.psiP = Math.max(0, Math.min(1, n(e.target.value))); re(); };
+  $('#ckW').onchange = e => { c.perm = e.target.checked ? 1 : 0; re(); };
+  $('#ckR').onchange = e => { c.room6 = e.target.checked ? 1 : 0; re(); };
 }
 
 function renderMain() {
@@ -1500,8 +1768,8 @@ function renderMain() {
   right += '</div>';
   h += `<div class="lay"><div>${pCard}${liveCard(t, o, r.v)}${qCard(t, r, q, mk)}</div><div>${right}</div></div>`;
   h += `<div class="card"><h3>Kết quả nội lực, chuyển vị</h3>${verdict(r.items)}${itemsTable(r.items)}
-    <div class="mut" style="margin-top:6px;font-size:11.5px">Quy ước: M dương căng thớ dưới · phản lực dương hướng lên · f dương hướng xuống · Q = dM/dx. "Lời giải số" = Frame2D (phần tử hữu hạn, đã kiểm chứng).</div></div>`;
-  el.innerHTML = h; bindForm(t, o); bindLive(t, o); el.scrollTop = sy;
+    <div class="mut" style="margin-top:6px;font-size:11.5px">Quy ước: M dương căng thớ dưới · phản lực dương hướng lên · f dương hướng xuống · Q = dM/dx. "Lời giải số" = Frame2D (phần tử hữu hạn, đã kiểm chứng).</div></div>` + rcCard(t, o, r);
+  el.innerHTML = h; bindForm(t, o); bindLive(t, o); bindRC(o); el.scrollTop = sy;
   const setX = v => { q.x = v; save(); renderMain(); };
   $('#qGo').onclick = () => setX($('#qx').value); $('#qx').onchange = () => setX($('#qx').value);
   if ($('#qk')) $('#qk').onchange = () => { q.k = +$('#qk').value; q.x = Math.min(+q.x || 0, 1); save(); renderMain(); };
@@ -1548,6 +1816,7 @@ function reportHTML(r) {
   h += `<h2>5. Bảng giá trị${frame ? ' – thanh ' + esc(r.model.members[+q.k].id) : ''}${note5}</h2>`;
   if (M) h += `<div class="sm"><b>Tại x = ${SoDo.fmtN(M.x)} m:</b> Q = ${Math.abs(M.Vl - M.Vr) > 1e-6 ? fx(M.Vl) + ' | ' + fx(M.Vr) : fx(M.Vr)} kN (${fx(M.Vr / TF(), 3)} T); M = ${fx(M.M)} kNm (${fx(M.M / TF(), 3)} T·m); ${frame ? 'v = ' + fx(M.v * 1000, 3) : 'f = ' + fx(M.f, 3)} mm</div>`;
   for (let i = 0; i < rows.length; i += 13) { const c = rows.slice(i, i + 13); h += `<table class="tx"><tr><th>x (m)</th>${c.map(rw => `<th>${fx(rw[0], 2)}</th>`).join('')}</tr><tr><th>Q (kN)</th>${c.map(rw => `<td>${fx(rw[1])}</td>`).join('')}</tr><tr><th>Q (T)</th>${c.map(rw => `<td>${fx(rw[1] / TF(), 3)}</td>`).join('')}</tr><tr><th>M (kNm)</th>${c.map(rw => `<td>${fx(rw[2])}</td>`).join('')}</tr><tr><th>M (T·m)</th>${c.map(rw => `<td>${fx(rw[2] / TF(), 3)}</td>`).join('')}</tr><tr><th>${frame ? 'v' : 'f'} (mm)</th>${c.map(rw => `<td>${fx(rw[3], 3)}</td>`).join('')}</tr></table>`; }
+  { const rc = rcCard(t, o, r, true); if (rc) h += `<h2>6. Kiểm tra cấu kiện dầm BTCT theo TCVN 5574:2018</h2>${rcPrint(rc)}`; }
   h += `<div class="sign"><div><b>NGƯỜI TÍNH</b><br><br><br>${esc(I.calc)}</div><div><b>NGƯỜI KIỂM</b><br><br><br>${esc(I.check)}</div><div><b>CHỦ TRÌ</b><br><br><br>${esc(I.lead)}</div></div>
    <div class="ft">PA1Construction · ${esc(I.code)} · PA1 Sơ đồ mẫu – ${esc(t.id)} · ${new Date().toLocaleString('vi-VN')}</div></div></div>`;
   return h;

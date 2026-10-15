@@ -384,7 +384,7 @@ function goodIntervals(R,a,b){
 const iS=s=>Math.ceil(s-1e-9), iE=e=>Math.ceil(e-1e-9)-1;
 
 /* Tabs */
-$("tabs").innerHTML=RULERS.map((R,k)=>`<button class="tab" role="tab" data-k="${k}"><b>${R.name}</b><span>${R.use}</span></button>`).join("");
+$("tabs").innerHTML=RULERS.map((R,k)=>`<button class="tab" role="tab" data-k="${k}"><b>${R.name}</b><span>${R.use.replace(" (","<br>(")}</span></button>`).join("");
 $("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab"); if(b){sel=+b.dataset.k; render();}});
 
 /* Input + unit */

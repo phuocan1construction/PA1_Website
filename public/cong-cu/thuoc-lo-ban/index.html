@@ -17,6 +17,7 @@
 {"@context":"https://schema.org","@type":"WebApplication","name":"Thước Lỗ Ban Online","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","inLanguage":"vi","offers":{"@type":"Offer","price":"0","priceCurrency":"VND"},
 "publisher":{"@type":"Organization","name":"Công ty Kiến Trúc & Xây Dựng Phước An 1","url":"https://phuocan1construction.com","telephone":"0523023023","email":"phuocan1construction@gmail.com","address":"243/15A Bình Thung, Đông Hòa, Hồ Chí Minh"}}
 </script>
+<script>window.PA1_WEB=true;</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Oswald:wght@500;600;700&display=swap">
@@ -145,6 +146,20 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
 .dim details{font-size:13px;color:var(--muted)}
 .dim summary{cursor:pointer;font-family:var(--f-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .dim details p{margin:6px 0 0;font-family:var(--f-mono);font-size:12px;line-height:1.7}
+.sticky{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:8px;display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap;font-family:var(--f-mono);font-size:12.5px}
+.sticky .sv{font-family:var(--f-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.hist{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.hist button{font-family:var(--f-mono);font-size:12px;background:none;border:1px solid var(--line);color:var(--fg);border-radius:3px;padding:3px 8px}
+.frame{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center;margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:4px}
+.frame input[type=number]{font-family:var(--f-mono);font-size:14px;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:6px 8px;width:70px}
+.chk{display:flex;gap:6px;align-items:center;letter-spacing:1px;cursor:pointer}
+.chk input{accent-color:var(--accent);width:16px;height:16px}
+@media print{
+  :root:not(#p),:root[data-theme]:not(#p){--bg:#fff;--surface:#fff;--surface-2:#F4F1EA;--line:#ccc;--title:#A97318;--accent:#D9A441;--fg:#1C1C1C;--muted:#555;--good:#B3261E;--good-bg:rgba(179,38,30,.08);--bad:#1C1C1C;--bad-bg:#eee;color-scheme:light}
+  .steps,.tabs,.units,.hist,.ruler-meta,.range-form,.tol,.btn,.alt,.sticky,#rulerBox,.frame,details{display:none!important}
+  .panel,.dim,.card{break-inside:avoid}
+  body{padding:0}
+}
 @media (max-width:720px){
   .input-row{grid-template-columns:1fr}
   .cards{grid-template-columns:1fr}
@@ -171,6 +186,8 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
     </div>
   </header>
 
+  <div class="sticky" id="sticky" aria-live="polite"></div>
+
   <section class="panel input-row" aria-label="Kích thước cần tra">
     <div>
       <label class="label" for="len">Kích thước cần tra</label>
@@ -179,6 +196,7 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
         <div class="units" role="group" aria-label="Đơn vị"><button class="u" data-u="mm">mm</button><button class="u" data-u="cm">cm</button></div>
       </div>
       <div class="cm" id="cmOut"></div>
+      <div class="hist" id="hist"></div>
     </div>
     <div class="steps" aria-label="Điều chỉnh nhanh">
       <button class="btn" data-d="-10">−10</button>
@@ -224,6 +242,11 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
     <div class="label" style="margin-top:14px">1 · Chọn cấu kiện</div>
     <div class="pchips" id="pchips" role="group" aria-label="Chọn cấu kiện"></div>
     <p class="note" id="pnote"></p>
+    <div class="frame" id="frameBox" hidden>
+      <label class="tol cap" for="frameT">Khung bao dày <input id="frameT" type="number" min="0" max="200" step="5" value="50"> mm/cạnh</label>
+      <label class="cap chk" for="sill"><input type="checkbox" id="sill"> Có ngưỡng dưới</label>
+      <label class="cap chk" for="both"><input type="checkbox" id="both"> Phủ bì cũng đẹp theo thước 42,9</label>
+    </div>
     <div class="label" style="margin-top:16px">2 · Nhập kích thước mong muốn</div>
     <div class="dims" id="dims"></div>
     <div class="answer" id="answer"></div>
@@ -294,6 +317,10 @@ const fmtL=v=>Number.isInteger(v)?fmt(v):fmt(v,1);
 let L=2130, sel=0, unit="mm";
 try{const s=JSON.parse(localStorage.getItem("pa1-loban")||"{}"); if(s.L>0)L=s.L; if(s.sel>=0&&s.sel<3)sel=s.sel; if(s.unit==="cm")unit="cm";}catch(e){}
 function save(){try{localStorage.setItem("pa1-loban",JSON.stringify({L,sel,unit}))}catch(e){}}
+let hist=[],histT=null;
+try{const h=JSON.parse(localStorage.getItem("pa1-loban-hist")||"[]"); if(Array.isArray(h))hist=h.filter(v=>v>0).slice(0,8);}catch(e){}
+function pushHist(){hist=[L,...hist.filter(v=>v!==L)].slice(0,8); try{localStorage.setItem("pa1-loban-hist",JSON.stringify(hist))}catch(e){} renderHist();}
+function renderHist(){const R=RULERS[sel]; $("hist").innerHTML=hist.length?`<span class="cap" style="letter-spacing:1px">Gần đây</span>`+hist.map(v=>{const r=lookup(R,v);return `<button data-go="${v}" class="${r.good?"good":"bad"}">${r.good?"✔":"✘"} ${fmtL(v)}</button>`}).join(""):"";}
 
 function lookup(R,len){
   const P=R.period,n=R.cungs.length,c=P/n,r=((len%P)+P)%P;
@@ -373,6 +400,8 @@ function draw(){
   // needle
   const xm=Math.round(W/2)+.5; ctx.strokeStyle=C.nd; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(xm,0); ctx.lineTo(xm,H); ctx.stroke();
   ctx.fillStyle=C.nd; ctx.beginPath(); ctx.moveTo(xm-7,0); ctx.lineTo(xm+7,0); ctx.lineTo(xm,9); ctx.fill();
+  const lt=fmtL(L)+" mm"; ctx.font="600 12px 'JetBrains Mono', monospace"; const lw=ctx.measureText(lt).width+14;
+  ctx.fillStyle=C.nd; ctx.fillRect(xm-lw/2,H-20,lw,18); ctx.fillStyle=C.tape; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(lt,xm,H-11);
 }
 let drag=null;
 box.addEventListener("pointerdown",e=>{drag={x:e.clientX,v:L}; box.setPointerCapture(e.pointerId);});
@@ -387,9 +416,11 @@ function render(syncInput=true){
   document.querySelectorAll(".u").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===unit));
   $("cmOut").textContent=unit==="cm"?`= ${fmtL(L)} mm`:`= ${fmt(L/10,1)} cm`;
   document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",+t.dataset.k===sel));
+  $("sticky").innerHTML=`<span class="sv">${fmtL(L)} mm</span>`+RULERS.map(Q=>{const r=lookup(Q,L);return `<span class="${r.good?"good":"bad"}">${r.good?"✔":"✘"} ${Q.name.replace(" cm","")}: ${r.cung}</span>`}).join("");
+  clearTimeout(histT); histT=setTimeout(pushHist,1200); renderHist();
   const R=RULERS[sel],res=lookup(R,L),n=R.cungs.length;
   $("rulerInfo").textContent=`Đang chọn thước ${R.name} · chu kỳ ${fmt(R.period)} mm · ${n} cung`;
-  const st=$("stamp"); st.textContent=res.good?"Tốt":"Xấu"; st.className="stamp "+(res.good?"good":"bad");
+  const st=$("stamp"); st.textContent=res.good?"✔ Tốt":"✘ Xấu"; st.className="stamp "+(res.good?"good":"bad");
   $("vLabel").textContent=`Thước ${R.name} · ${R.use}`;
   $("vBig").innerHTML=`Cung <span class="${res.good?"good":"bad"}">${res.cung}</span> · ${res.sub}`;
   $("vMean").textContent=res.mean;
@@ -429,13 +460,13 @@ function renderRange(){
 /* Đề xuất theo cấu kiện — [tên, chỉ số thước, min thông dụng, max thông dụng, mặc định, tối thiểu QCVN] (mm) */
 const QC="QCVN 06:2022/BXD mục 3.2.9: lối ra thoát nạn cao thông thủy ≥ 1 900 mm, rộng thông thủy ≥ 800 mm.";
 const PRESETS=[
- {name:"Cửa đi chính",note:"Đo thông thủy (lọt lòng sau khi lắp khung). "+QC,
+ {name:"Cửa đi chính",frame:true,note:"Đo thông thủy (lọt lòng sau khi lắp khung). "+QC,
   dims:[["Rộng thông thủy",0,1200,2400,1600,800],["Cao thông thủy",0,2200,2800,2450,1900]]},
- {name:"Cửa phòng",note:"Đo thông thủy. "+QC,
+ {name:"Cửa phòng",frame:true,note:"Đo thông thủy. "+QC,
   dims:[["Rộng thông thủy",0,800,1000,850,800],["Cao thông thủy",0,2000,2300,2150,1900]]},
- {name:"Cửa WC",note:"Đo thông thủy. Cửa WC không phải lối ra thoát nạn, có thể nhỏ hơn 800 mm.",
+ {name:"Cửa WC",frame:true,note:"Đo thông thủy. Cửa WC không phải lối ra thoát nạn, có thể nhỏ hơn 800 mm.",
   dims:[["Rộng thông thủy",0,650,850,750],["Cao thông thủy",0,1950,2200,2050]]},
- {name:"Cửa sổ",note:"Đo lọt lòng ô cửa (khối thông thủy).",
+ {name:"Cửa sổ",frame:true,note:"Đo lọt lòng ô cửa (khối thông thủy).",
   dims:[["Rộng lọt lòng",0,500,2400,1200],["Cao lọt lòng",0,600,1800,1300]]},
  {name:"Tủ quần áo",note:"Đo phủ bì khối tủ (khối đặc, thước 42,9).",
   dims:[["Rộng phủ bì",1,800,3000,1600],["Cao phủ bì",1,1800,2700,2200],["Sâu phủ bì",1,500,700,600]]},
@@ -452,42 +483,51 @@ const saveWant=()=>{try{localStorage.setItem("pa1-loban-want",JSON.stringify(wan
 const getWant=(p,d)=>{const v=want[p+"-"+d]; return v>0?v:PRESETS[p].dims[d][4];};
 
 function okAt(R,v,t){const iv=goodIntervals(R,Math.max(0,v-60),v+60); return iv.some(x=>v-t>=x.s&&v+t<x.e);}
-// Số Lỗ Ban gần nhất: ưu tiên bước 10 mm, rồi 5 mm, rồi 1 mm
-function nearest(R,w,t){
-  const exact=okAt(R,w,t);
+// Số Lỗ Ban gần nhất: ưu tiên bước 10 mm, rồi 5, rồi 1 mm; extra = điều kiện phụ (phủ bì)
+function nearest(R,w,t,extra){
+  const okv=v=>okAt(R,v,t)&&(!extra||extra(v)), exact=okv(w), reach=extra?1500:R.period;
   for(const step of [10,5,1]){
     let lo=null,hi=null;
-    for(let v=Math.floor(w/step)*step;v>=Math.max(1,w-R.period);v-=step) if(okAt(R,v,t)){lo=v;break;}
-    for(let v=Math.ceil(w/step)*step;v<=w+R.period;v+=step) if(okAt(R,v,t)){hi=v;break;}
-    if(lo!=null||hi!=null){
-      let best=lo==null?hi:hi==null?lo:(w-lo<=hi-w?lo:hi);
-      if(exact) best=w;
-      return {best,lo,hi,exact,step};
-    }
+    for(let v=Math.floor(w/step)*step;v>=Math.max(1,w-reach);v-=step) if(okv(v)){lo=v;break;}
+    for(let v=Math.ceil(w/step)*step;v<=w+reach;v+=step) if(okv(v)){hi=v;break;}
+    if(lo!=null||hi!=null){let best=lo==null?hi:hi==null?lo:(w-lo<=hi-w?lo:hi); if(exact)best=w; return {best,lo,hi,exact,step};}
   }
   return {best:null,lo:null,hi:null,exact:false};
 }
+let frameT=50,sill=false,both=false;
+const frameAdd=(p,d)=>!PRESETS[p].frame?0:(d===0?2*frameT:(sill?2:1)*frameT);
+const extraFor=(p,d)=>(PRESETS[p].frame&&both)?(v=>okAt(RULERS[1],v+frameAdd(p,d),tol)):null;
+const calc=(p,d)=>nearest(RULERS[PRESETS[p].dims[d][1]],getWant(p,d),tol,extraFor(p,d));
 const sign=n=>n===0?"±0":(n>0?"+":"−")+fmt(Math.abs(n));
 function dimResult(p,d){
-  const [lb,ri,mn,mx,ty,qc]=PRESETS[p].dims[d],R=RULERS[ri],w=getWant(p,d),r=nearest(R,w,tol);
-  if(r.best==null) return {html:`<div class="warn">Không tìm được số phù hợp, giảm dung sai.</div>`,best:null};
-  const L0=lookup(R,r.best),warns=[];
+  const P=PRESETS[p],[lb,ri,mn,mx,ty,qc]=P.dims[d],R=RULERS[ri],w=getWant(p,d),r=calc(p,d);
+  if(r.best==null) return {html:`<div class="warn">Không tìm được số phù hợp, giảm dung sai hoặc độ dày khung.</div>`,best:null};
+  const L0=lookup(R,r.best),Lw=lookup(R,w),warns=[];
   if(qc&&r.best<qc) warns.push(`Nhỏ hơn mức tối thiểu ${fmt(qc)} mm theo QCVN 06:2022/BXD mục 3.2.9.`);
   if(r.best<mn||r.best>mx) warns.push(`Ngoài phạm vi thông dụng ${fmt(mn)}–${fmt(mx)} mm cho cấu kiện này.`);
   const alts=[r.lo,r.hi].filter(v=>v!=null&&v!==r.best);
-  const head=r.exact?`Kích thước ${fmt(w)} mm đã đạt cung tốt, dùng đúng số này.`:`${fmt(w)} mm rơi vào cung ${lookup(R,w).cung} (xấu). Số gần nhất nên dùng:`;
+  const two=P.frame&&both;
+  const head=r.exact?`${fmt(w)} mm đã đạt cung tốt${two?" cả thông thủy và phủ bì":""}, dùng đúng số này.`
+    :(Lw.good&&two?`${fmt(w)} mm đạt cung ${Lw.cung} nhưng phủ bì chưa đẹp. Số gần nhất đạt cả hai:`:`${fmt(w)} mm rơi vào cung ${Lw.cung} (xấu). Số gần nhất nên dùng:`);
+  let fr="";
+  if(P.frame){const pb=r.best+frameAdd(p,d),Lp=lookup(RULERS[1],pb);
+    fr=`<div class="rd">Phủ bì (khung ${fmt(frameT)} mm${d===1?(sill?", có ngưỡng":", không ngưỡng"):" × 2 bên"}): <b style="color:var(--fg)">${fmt(pb)} mm</b> → thước 42,9: <span class="${Lp.good?"good":"bad"}">${Lp.good?"✔":"✘"} ${Lp.cung}</span></div>`;}
   return {best:r.best,html:`<div class="res">
     <div class="rd">${head}</div>
     <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="rv good">${fmt(r.best)}</span><span class="rd">mm · ${sign(r.best-w)} mm so với mong muốn</span></div>
-    <div style="font-size:14px">Cung <b class="good">${L0.cung}</b> · ${L0.sub}<span class="note" style="display:block">${L0.mean}</span></div>
+    <div style="font-size:14px">✔ Cung <b class="good">${L0.cung}</b> · ${L0.sub}<span class="note" style="display:block">${L0.mean}</span></div>
+    ${fr}
     ${alts.length?`<div class="alt"><span class="rd">Phương án khác:</span>${alts.map(v=>`<button class="chip" data-go="${v}" data-ruler="${ri}">${fmt(v)} (${sign(v-w)})</button>`).join("")}</div>`:""}
     ${warns.map(x=>`<div class="warn">${x}</div>`).join("")}
     <div><button class="btn" data-go="${r.best}" data-ruler="${ri}">Xem trên thước</button></div></div>`};
 }
 function renderAnswer(){
-  const P=PRESETS[preset],vals=P.dims.map((_,d)=>{const [lb,ri]=P.dims[d];const r=nearest(RULERS[ri],getWant(preset,d),tol);return r.best;});
-  const txt=`${P.name}: `+P.dims.map((dm,d)=>`${dm[0].toLowerCase()} ${vals[d]!=null?fmt(vals[d]):"—"} mm`).join(" · ");
-  $("answer").innerHTML=`<div style="min-width:0"><div class="label">Kết quả đề xuất</div><div class="av">${P.name}: ${vals.map(v=>v!=null?fmt(v):"—").join(" × ")} mm</div></div><button class="btn" id="copyAns">Sao chép</button>`;
+  const P=PRESETS[preset],vals=P.dims.map((_,d)=>calc(preset,d).best);
+  const pbs=P.frame?vals.map((v,d)=>v!=null?v+frameAdd(preset,d):null):null;
+  const f=a=>a.map(v=>v!=null?fmt(v):"—").join(" × ");
+  const txt=`${P.name}: `+P.dims.map((dm,d)=>`${dm[0].toLowerCase()} ${vals[d]!=null?fmt(vals[d]):"—"} mm`).join(" · ")+(pbs?` · phủ bì ${f(pbs)} mm (khung ${frameT} mm)`:"")+" — Thước Lỗ Ban PA1";
+  $("answer").innerHTML=`<div style="min-width:0"><div class="label">Kết quả đề xuất</div><div class="av">${P.name}: ${f(vals)} mm</div>${pbs?`<div class="rd">Phủ bì: ${f(pbs)} mm · khung ${fmt(frameT)} mm</div>`:""}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="copyAns">Sao chép</button>${window.PA1_WEB?`<button class="btn" onclick="window.print()">In phiếu</button>`:""}</div>`;
   $("copyAns").onclick=()=>{const b=$("copyAns");const done=()=>{b.textContent="Đã sao chép";setTimeout(()=>b.textContent="Sao chép",1500)};
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(e){b.textContent=txt}};
 }
@@ -496,12 +536,16 @@ function renderPresets(){
   const P=PRESETS[preset];
   $("pchips").innerHTML=PRESETS.map((p,k)=>`<button class="pchip" data-p="${k}" aria-pressed="${k===preset}">${p.name}</button>`).join("");
   $("pnote").textContent=P.note;
+  $("frameBox").hidden=!P.frame;
   $("dims").innerHTML=P.dims.map(([lb,ri,mn,mx,ty],d)=>`<div class="dim">
     <div class="dim-h"><b>${lb}</b><span class="cap" style="letter-spacing:1px">Thước ${RULERS[ri].name} · thông dụng ${fmt(mn)}–${fmt(mx)} mm</span></div>
     <label class="want"><span class="rd">Anh muốn khoảng</span><input id="w-${preset}-${d}" data-d="${d}" type="number" inputmode="numeric" min="1" step="1" value="${getWant(preset,d)}"><span class="rd">mm</span></label>
     <div id="res-${d}"></div></div>`).join("");
   P.dims.forEach((_,d)=>renderDim(d)); renderAnswer();
 }
+$("frameT").addEventListener("input",()=>{const v=parseFloat($("frameT").value); if(v>=0&&v<=200){frameT=v; renderPresets();}});
+$("sill").addEventListener("change",()=>{sill=$("sill").checked; renderPresets();});
+$("both").addEventListener("change",()=>{both=$("both").checked; renderPresets();});
 $("dims").addEventListener("input",e=>{const i=e.target.closest("input[data-d]"); if(!i)return; const d=+i.dataset.d,v=parseFloat(i.value);
   if(v>0){want[preset+"-"+d]=Math.round(v); saveWant(); renderDim(d); renderAnswer();}});
 $("pchips").addEventListener("click",e=>{const b=e.target.closest(".pchip"); if(b){preset=+b.dataset.p; renderPresets();}});

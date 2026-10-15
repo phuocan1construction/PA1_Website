@@ -605,9 +605,6 @@ svg{display:block;max-width:100%}
 
   // ===== Dầm hai gối =====
   const G2 = 'Dầm trên hai gối tựa';
-  add({ id: 'D04', g: G2, n: '4 · Lực P giữa nhịp', src: 'Hình 01 – sơ đồ 4', P: [pl, pP],
-    build: v => beam(SS(v), [{ t: 'P', x: v.l / 2, P: v.P }], v.EJ),
-    it: v => [it('A = B', 'P/2', 'kN', h => h.R('A')), it('Q_x', 'P/2', 'kN', h => h.V(v.l / 4)), it('M_max', 'P*l/4', 'kNm', h => h.Mmax().v), it('f_max', 'P*l^3/(48*EJ)', 'mm', h => h.fmax().v)] });
   add({ id: 'D05', g: G2, n: '5 · Lực P tại khoảng cách a', src: 'Hình 01 – sơ đồ 5', P: [pl, pP, ['a', 'Khoảng cách a (từ gối A)', 'm', 2]], d: [['b', 'l-a', 'm']],
     chk: v => v.a > 0 && v.a < v.l ? '' : 'Cần 0 < a < l',
     build: v => beam(SS(v), [{ t: 'P', x: v.a, P: v.P }], v.EJ),
@@ -616,20 +613,42 @@ svg{display:block;max-width:100%}
       it('x (f_max)', 'sqrt(a*(a+2*b)/3)', 'm', h => h.fmax().x, { cond: v.a >= v.b, tol: 0.02 }),
       it('f_max', 'P*a/(3*EJ*l)*sqrt(((b^2+2*a*b)/3)^3)', 'mm', h => h.fmax().v, { cond: v.a < v.b, note: 'a < b: đổi vai trò a, b trong công thức sổ tay' }),
       it('x (f_max)', 'l-sqrt(b*(b+2*a)/3)', 'm', h => h.fmax().x, { cond: v.a < v.b, tol: 0.02 })] });
-  add({ id: 'D06', g: G2, n: '6 · Hai lực P đối xứng cách gối a', src: 'Hình 01 – sơ đồ 6', P: [pl, pP, ['a', 'Khoảng cách a', 'm', 2]], d: [['b', 'l-2*a', 'm']],
-    chk: v => v.a > 0 && 2 * v.a <= v.l ? '' : 'Cần 0 < a ≤ l/2',
-    build: v => beam(SS(v), [{ t: 'P', x: v.a, P: v.P }, { t: 'P', x: v.l - v.a, P: v.P }], v.EJ),
-    it: v => [it('A = B', 'P', 'kN', h => h.R('A')), it('M_max = Pa', 'P*a', 'kNm', h => h.Mmax().v), it('f_max', 'P*a/(24*EJ)*(3*l^2-4*a^2)', 'mm', h => h.fmax().v)] });
+  add({ id: 'D06', g: G2, n: '6 · Hai lực P1, P2; P1 cách A khoảng xA, P2 cách P1 khoảng x', src: 'Hình 01 – sơ đồ 6 (mở rộng)', P: [pl, ['P1', 'Lực P1', 'kN', 50], ['P2', 'Lực P2', 'kN', 50], ['xA', 'Khoảng cách xA (từ gối A đến P1)', 'm', 1.5], ['x', 'Khoảng cách x (từ P1 đến P2)', 'm', 2]], d: [['c', 'l-xA-x', 'm']],
+    chk: v => v.xA > 0 && v.x >= 0 && v.xA + v.x < v.l ? '' : 'Cần xA > 0, x ≥ 0 và xA + x < l',
+    note: 'c = l − xA − x: khoảng cách từ P2 đến gối B.',
+    build: v => beam(SS(v), [{ t: 'P', x: v.xA, P: v.P1 }, { t: 'P', x: v.xA + v.x, P: v.P2 }], v.EJ),
+    it: v => [it('A', '(P1*(l-xA)+P2*c)/l', 'kN', h => h.R('A')), it('B', '(P1*xA+P2*(xA+x))/l', 'kN', h => h.R('B')),
+      it('M dưới P1 = A·xA', '(P1*(l-xA)+P2*c)/l*xA', 'kNm', h => h.M(v.xA)), it('M dưới P2 = B·c', '(P1*xA+P2*(xA+x))/l*c', 'kNm', h => h.M(v.xA + v.x)),
+      it('M_max', 'max((P1*(l-xA)+P2*c)/l*xA,(P1*xA+P2*(xA+x))/l*c)', 'kNm', h => h.Mmax().v),
+      it('f_max', null, 'mm', h => h.fmax().v, { note: 'lấy theo lời giải số' }), it('x (f_max)', null, 'm', h => h.fmax().x)] });
   add({ id: 'D07', g: G2, n: '7 · Tải phân bố đều', src: 'Hình 01 – sơ đồ 7', P: [pl, pq],
     build: v => beam(SS(v), [{ t: 'U', x1: 0, x2: v.l, q1: v.p, q2: v.p }], v.EJ),
     it: v => [it('A = B', 'p*l/2', 'kN', h => h.R('A')), it('M_max', 'p*l^2/8', 'kNm', h => h.Mmax().v), it('f_max', '5*p*l^4/(384*EJ)', 'mm', h => h.fmax().v)] });
-  add({ id: 'D08', g: G2, n: '8 · Tải đều trên đoạn b ở đầu B', src: 'Hình 01 – sơ đồ 8', P: [pl, pq, ['a', 'Đoạn không tải a (từ A)', 'm', 2]], d: [['b', 'l-a', 'm']],
+  add({ id: 'D08', g: G2, n: '8 · Tải đều trên đoạn b ở đầu B', src: 'Hình 01 – sơ đồ 8', P: [pl, pq, ['a', 'Đoạn không tải a (từ A)', 'm', 2]], d: [['b', 'l-a', 'm'], ['C1', 'p*b^2/(2*l)*l^2/6-p*b^4/(24*l)', 'kNm²']],
     chk: v => v.a >= 0 && v.a < v.l ? '' : 'Cần 0 ≤ a < l',
+    fixNote: 'Sổ tay in f_max = 0,0026pl⁴/EJ – sai. Đã thay bằng công thức đúng: EJ·f(x) = C1·x − A·x³/6 + p·⟨x − a⟩⁴/24, C1 = A·l²/6 − p·b⁴/(24l); x₀ là nghiệm của f′(x) = 0 (với a = 0,547l: f_max = 0,0056pl⁴/EJ tại x₀ = 0,547l).',
     build: v => beam(SS(v), [{ t: 'U', x1: v.a, x2: v.l, q1: v.p, q2: v.p }], v.EJ),
-    it: v => [it('A', 'p*b^2/(2*l)', 'kN', h => h.R('A')), it('B', 'p*b*(l+a)/(2*l)', 'kN', h => h.R('B')), it('M_max', 'p*l^2/8*(1-a^2/l^2)^2', 'kNm', h => h.Mmax().v),
-      it('x (M_max)', 'b^2/(2*l)+a', 'm', h => h.Mmax().x, { tol: 0.02 }),
-      it('f_max', null, 'mm', h => h.fmax().v, { note: 'lấy theo lời giải số. Sổ tay ghi f = 0,0026pl⁴/EJ "tại a = 0,547l" – KHÔNG khớp kiểm chứng (đúng ≈ 0,0056pl⁴/EJ tại a = 0,547l; trị số 0,0026 chỉ gần đúng khi a ≈ 0,70l)' })],
-    bookErr: 'Trị số f_max = 0,0026pl⁴/EJ trong sổ tay không khớp lời giải – chương trình dùng lời giải số.' });
+    it: v => {
+      const A = v.p * v.b ** 2 / (2 * v.l), g = x => v.C1 - A * x * x / 2 + (x > v.a ? v.p * (x - v.a) ** 3 / 6 : 0);
+      let lo = 0, hi = v.l; for (let k = 0; k < 80; k++) { const m = (lo + hi) / 2; if (g(m) > 0) lo = m; else hi = m; } v.x0 = (lo + hi) / 2;
+      const inU = v.x0 <= v.a + 1e-12;
+      return [it('A', 'p*b^2/(2*l)', 'kN', h => h.R('A')), it('B', 'p*b*(l+a)/(2*l)', 'kN', h => h.R('B')), it('M_max', 'p*l^2/8*(1-a^2/l^2)^2', 'kNm', h => h.Mmax().v),
+        it('x (M_max)', 'b^2/(2*l)+a', 'm', h => h.Mmax().x, { tol: 0.02 }),
+        inU ? it('x₀ (f_max) = √(2C1/A)', 'sqrt(2*C1/(p*b^2/(2*l)))', 'm', h => h.fmax().x, { tol: 0.02, note: 'x₀ ≤ a: điểm võng lớn nhất nằm trong đoạn không tải' })
+          : it('x₀ (f_max)', 'x0', 'm', h => h.fmax().x, { tol: 0.02, note: 'x₀ > a: nghiệm của C1 − A·x²/2 + p(x − a)³/6 = 0' }),
+        inU ? it('f_max = 2C1·x₀/(3EJ)', '2*C1*sqrt(2*C1/(p*b^2/(2*l)))/(3*EJ)', 'mm', h => h.fmax().v)
+          : it('f_max', '(C1*x0-p*b^2/(2*l)*x0^3/6+p*(x0-a)^4/24)/EJ', 'mm', h => h.fmax().v)];
+    } });
+  add({ id: 'D08b', g: G2, n: '8b · Tải tam giác trên đoạn b ở đầu B', src: 'Hình 01 – sơ đồ 8 (mở rộng)', P: [pl, pq, ['a', 'Đoạn không tải a (từ A)', 'm', 2], ['dir', 'Đỉnh tam giác', '', 'B', [['B', 'p tại gối B (0 tại x = a)'], ['a', 'p tại x = a (0 tại gối B)']]]], d: [['b', 'l-a', 'm']],
+    chk: v => v.a >= 0 && v.a < v.l ? '' : 'Cần 0 ≤ a < l',
+    build: v => beam(SS(v), [{ t: 'U', x1: v.a, x2: v.l, q1: v.dir === 'B' ? 0 : v.p, q2: v.dir === 'B' ? v.p : 0 }], v.EJ),
+    it: v => v.dir === 'B' ? [it('A', 'p*b^2/(6*l)', 'kN', h => h.R('A')), it('B', 'p*b*(3*l-b)/(6*l)', 'kN', h => h.R('B')),
+      it('M_max', 'p*b^2/6*(a/l+2*(b/(3*l))^1.5)', 'kNm', h => h.Mmax().v), it('x (M_max)', 'a+b*sqrt(b/(3*l))', 'm', h => h.Mmax().x, { tol: 0.02 }),
+      it('f_max', null, 'mm', h => h.fmax().v, { note: 'lấy theo lời giải số' }), it('x (f_max)', null, 'm', h => h.fmax().x)]
+      : [it('A', 'p*b^2/(3*l)', 'kN', h => h.R('A')), it('B', 'p*b*(3*l-2*b)/(6*l)', 'kN', h => h.R('B')),
+      it('x (M_max)', 'a+b*(1-sqrt(1-2*b/(3*l)))', 'm', h => h.Mmax().x, { tol: 0.02 }),
+      it('M_max', 'p*b^2/(3*l)*(a+b*(1-sqrt(1-2*b/(3*l))))-p*b^2*((1-sqrt(1-2*b/(3*l)))^2/2-(1-sqrt(1-2*b/(3*l)))^3/6)', 'kNm', h => h.Mmax().v),
+      it('f_max', null, 'mm', h => h.fmax().v, { note: 'lấy theo lời giải số' }), it('x (f_max)', null, 'm', h => h.fmax().x)] });
   add({ id: 'D09', g: G2, n: '9 · Tải tam giác đối xứng (đỉnh p giữa nhịp)', src: 'Hình 01 – sơ đồ 9', P: [pl, pq],
     build: v => beam(SS(v), [{ t: 'U', x1: 0, x2: v.l / 2, q1: 0, q2: v.p }, { t: 'U', x1: v.l / 2, x2: v.l, q1: v.p, q2: 0 }], v.EJ),
     it: v => [it('A = B', 'p*l/4', 'kN', h => h.R('A')), it('M_max', 'p*l^2/12', 'kNm', h => h.Mmax().v), it('f_max', 'p*l^4/(120*EJ)', 'mm', h => h.fmax().v)] });
@@ -644,6 +663,12 @@ svg{display:block;max-width:100%}
     build: v => beam(OH(v), [{ t: 'U', x1: 0, x2: v.l + 2 * v.a, q1: v.p, q2: v.p }], v.EJ),
     it: v => [it('A = B', 'p*(a+l/2)', 'kN', h => h.R('A')), it('M_A', '-p*a^2/2', 'kNm', h => h.M(v.a)), it('M_max (giữa nhịp)', 'p/2*(l^2/4-a^2)', 'kNm', h => h.M(v.a + v.l / 2)), it('f (giữa nhịp)', 'p*l^2/(48*EJ)*(5/8*l^2-3*a^2)', 'mm', h => h.f(v.a + v.l / 2))] });
 
+  add({ id: 'D10c', g: G3, n: '10c · Lực P tại hai đầu console và lực P1 trong nhịp AB, cách A đoạn xA', src: 'Hình 01 – sơ đồ 10 (mở rộng)', P: [['l', 'Nhịp giữa hai gối l', 'm', 5], ['a', 'Chiều dài console a', 'm', 1.5], pP, ['P1', 'Lực P1 trong nhịp', 'kN', 50], ['xA', 'Khoảng cách xA (từ gối A)', 'm', 2]], d: [['b', 'l-xA', 'm']],
+    chk: v => v.xA > 0 && v.xA < v.l ? '' : 'Cần 0 < xA < l',
+    build: v => beam(OH(v), [{ t: 'P', x: 0, P: v.P }, { t: 'P', x: v.l + 2 * v.a, P: v.P }, { t: 'P', x: v.a + v.xA, P: v.P1 }], v.EJ),
+    it: v => [it('A', 'P+P1*b/l', 'kN', h => h.R('A')), it('B', 'P+P1*xA/l', 'kN', h => h.R('B')), it('M_A = M_B', '-P*a', 'kNm', h => h.M(v.a)),
+      it('M dưới P1', '-P*a+P1*xA*b/l', 'kNm', h => h.M(v.a + v.xA)), it('M_max (nhịp)', null, 'kNm', h => h.Mmax(v.a, v.a + v.l).v, { note: 'lấy theo lời giải số' }),
+      it('f giữa nhịp', null, 'mm', h => h.f(v.a + v.l / 2), { note: 'lấy theo lời giải số' }), it('f đầu console E', null, 'mm', h => h.f(0), { note: 'lấy theo lời giải số' })] });
   // ===== Một đầu ngàm một đầu khớp =====
   const G4 = 'Dầm một đầu ngàm, một đầu gối';
   add({ id: 'D11', g: G4, n: '11 · Lực P tại khoảng cách a', src: 'Hình 01 – sơ đồ 11', P: [pl, pP, ['a', 'Khoảng cách a (từ ngàm A)', 'm', 2]], d: [['b', 'l-a', 'm']],
@@ -651,9 +676,6 @@ svg{display:block;max-width:100%}
     build: v => beam(FX(v), [{ t: 'P', x: v.a, P: v.P }], v.EJ),
     it: v => [it('A', 'P*b/(2*l)*(3-b^2/l^2)', 'kN', h => h.R('A')), it('B', 'P*a^2/(2*l^2)*(2+b/l)', 'kN', h => h.R('B')), it('M_A', '-P*a*b/(2*l)*(1+b/l)', 'kNm', h => h.M(0)),
       it('M_max = B·b', 'P*a^2/(2*l^2)*(2+b/l)*b', 'kNm', h => h.M(v.a)), it('f_max', null, 'mm', h => h.fmax().v, { note: 'sổ tay cho f_x theo M_A, A – lấy theo lời giải số' })] });
-  add({ id: 'D12', g: G4, n: '12 · Lực P giữa nhịp', src: 'Hình 01 – sơ đồ 12', P: [pl, pP],
-    build: v => beam(FX(v), [{ t: 'P', x: v.l / 2, P: v.P }], v.EJ),
-    it: v => [it('A', '11/16*P', 'kN', h => h.R('A')), it('B', '5/16*P', 'kN', h => h.R('B')), it('M_A', '-3/16*P*l', 'kNm', h => h.M(0)), it('M_l/2', '5/32*P*l', 'kNm', h => h.M(v.l / 2)), it('f_max', '0.00933*P*l^3/EJ', 'mm', h => h.fmax().v)] });
   add({ id: 'D13', g: G4, n: '13 · Tải phân bố đều', src: 'Hình 01 – sơ đồ 13', P: [pl, pq],
     build: v => beam(FX(v), [{ t: 'U', x1: 0, x2: v.l, q1: v.p, q2: v.p }], v.EJ),
     it: v => [it('A', '5/8*p*l', 'kN', h => h.R('A')), it('B', '3/8*p*l', 'kN', h => h.R('B')), it('M_A', '-p*l^2/8', 'kNm', h => h.M(0)), it('M_max', '9/128*p*l^2', 'kNm', h => h.Mmax().v),
@@ -662,12 +684,6 @@ svg{display:block;max-width:100%}
     build: v => beam(FX(v), [{ t: 'U', x1: 0, x2: v.l, q1: v.p, q2: 0 }], v.EJ),
     it: v => [it('A', '2/5*p*l', 'kN', h => h.R('A')), it('B', '1/10*p*l', 'kN', h => h.R('B')), it('M_A', '-p*l^2/15', 'kNm', h => h.M(0)), it('M_max', 'p*l^2/33.6', 'kNm', h => h.Mmax().v),
       it('x (M_max)', '0.553*l', 'm', h => h.Mmax().x, { tol: 0.02 }), it('f_max', 'p*l^4/(418.6*EJ)', 'mm', h => h.fmax().v), it('x (f_max)', '0.552*l', 'm', h => h.fmax().x, { tol: 0.02 })] });
-  add({ id: 'D15', g: G4, n: '15 · Hai lực P cách hai đầu một đoạn a', src: 'Hình 01 – sơ đồ 15', P: [pl, pP, ['a', 'Khoảng cách a', 'm', 2]], d: [['b', 'l-a', 'm']],
-    chk: v => v.a > 0 && 2 * v.a <= v.l ? '' : 'Cần 0 < a ≤ l/2',
-    note: 'Trong công thức sổ tay, b = l − a (khoảng cách từ ngàm đến lực thứ hai), không phải đoạn giữa hai lực.',
-    build: v => beam(FX(v), [{ t: 'P', x: v.a, P: v.P }, { t: 'P', x: v.l - v.a, P: v.P }], v.EJ),
-    it: v => [it('A', 'P*(1+3/2*a*b/l^2)', 'kN', h => h.R('A')), it('B', 'P*(1-3*a*b/(2*l^2))', 'kN', h => h.R('B')), it('M_A', '-3*P*a*b/(2*l)', 'kNm', h => h.M(0)),
-      it('M_a = M_A + A·a', '-3*P*a*b/(2*l)+P*(1+3/2*a*b/l^2)*a', 'kNm', h => h.M(v.a)), it('M_(l−a) = B·a', 'P*(1-3*a*b/(2*l^2))*a', 'kNm', h => h.M(v.l - v.a)), it('f_max', null, 'mm', h => h.fmax().v, { note: 'sổ tay không cho – lấy theo lời giải số' })] });
 
   // ===== Ngàm + console =====
   const G5 = 'Dầm một đầu ngàm, một đầu console';
@@ -676,16 +692,44 @@ svg{display:block;max-width:100%}
     build: v => beam(FC(v), [{ t: 'P', x: v.l + v.a, P: v.P }], v.EJ),
     it: v => [it('A', '-3*P*a/(2*l)', 'kN', h => h.R('A')), it('B', 'P*(1+3*a/(2*l))', 'kN', h => h.R('B')), it('M_A', 'P*a/2', 'kNm', h => h.M(0)), it('M_B', '-P*a', 'kNm', h => h.M(v.l)),
       it('f_min (trong nhịp, vồng lên)', '-P*a*l^2/(27*EJ)', 'mm', h => h.fmin(0, v.l).v), it('x (f_min)', '2*l/3', 'm', h => h.fmin(0, v.l).x, { tol: 0.02 }), it('f đầu console', null, 'mm', h => h.f(v.l + v.a), { note: 'sổ tay không cho – lấy theo lời giải số' })] });
+  add({ id: 'D16b', g: G5, n: '16b · Lực P tại đầu console và lực P1 trong nhịp AB, cách A đoạn xA', src: 'Hình 01 – sơ đồ 16 + 11 (cộng tác dụng)', P: [pl, ['a', 'Chiều dài console a', 'm', 1.5], pP, ['P1', 'Lực P1 trong nhịp', 'kN', 50], ['xA', 'Khoảng cách xA (từ ngàm A)', 'm', 2]], d: [['b', 'l-xA', 'm']],
+    chk: v => v.xA > 0 && v.xA < v.l ? '' : 'Cần 0 < xA < l',
+    build: v => beam(FC(v), [{ t: 'P', x: v.l + v.a, P: v.P }, { t: 'P', x: v.xA, P: v.P1 }], v.EJ),
+    it: v => [it('A', '-3*P*a/(2*l)+P1*b/(2*l)*(3-b^2/l^2)', 'kN', h => h.R('A')), it('B', 'P*(1+3*a/(2*l))+P1*xA^2/(2*l^2)*(2+b/l)', 'kN', h => h.R('B')),
+      it('M_A', 'P*a/2-P1*xA*b/(2*l)*(1+b/l)', 'kNm', h => h.M(0)), it('M_B', '-P*a', 'kNm', h => h.M(v.l)),
+      it('M dưới P1 = M_A + A·xA', 'P*a/2-P1*xA*b/(2*l)*(1+b/l)+(-3*P*a/(2*l)+P1*b/(2*l)*(3-b^2/l^2))*xA', 'kNm', h => h.M(v.xA)),
+      it('f_max (nhịp)', null, 'mm', h => h.fmax(0, v.l).v, { note: 'lấy theo lời giải số' }), it('f đầu console C', null, 'mm', h => h.f(v.l + v.a), { note: 'lấy theo lời giải số' })] });
   add({ id: 'D17', g: G5, n: '17 · Tải đều trên toàn dầm', src: 'Hình 01 – sơ đồ 17', P: [pl, ['a', 'Chiều dài console a', 'm', 1.5], pq],
     build: v => beam(FC(v), [{ t: 'U', x1: 0, x2: v.l + v.a, q1: v.p, q2: v.p }], v.EJ),
     it: v => [it('A', 'p*a/8*(5*l/a-6*a/l)', 'kN', h => h.R('A')), it('B', 'p*a/8*(3*l/a+6*a/l+8)', 'kN', h => h.R('B')), it('M_A', '-p/8*(l^2-2*a^2)', 'kNm', h => h.M(0)), it('M_B', '-p*a^2/2', 'kNm', h => h.M(v.l)),
       it('M_max (nhịp)', null, 'kNm', h => h.Mmax(0, v.l).v, { note: 'lấy theo lời giải số' }), it('f_max (nhịp)', null, 'mm', h => h.fmax(0, v.l).v, { note: 'lấy theo lời giải số' })] });
+
+  add({ id: 'D17b', g: G5, n: '17b · Tải tam giác trên 1 đoạn dầm dài đoạn x (cạnh tam giác ở ngàm A)', src: 'Hình 01 – sơ đồ 17 (mở rộng)', P: [pl, ['a', 'Chiều dài console a', 'm', 1.5], pq, ['x', 'Chiều dài đoạn tải x (từ ngàm A)', 'm', 3]],
+    d: [['u', 'min(x,l)', 'm'], ['d', 'max(x-l,0)', 'm'],
+      ['M_B', '-p*d^3/(6*x)', 'kNm'],
+      ['M_A', '-p/(2*l^2)*(l^2*u^2-l*u^3+u^4/4-(2*l^2*u^3/3-3*l*u^4/4+u^5/5)/x)-M_B/2', 'kNm'],
+      ['R_A', '(p*(l*u-u^2/2-(l*u^2/2-u^3/3)/x)+M_B-M_A)/l', 'kN']],
+    chk: v => v.x > 0 && v.x <= v.l + v.a + 1e-9 ? '' : 'Cần 0 < x ≤ l + a',
+    note: 'Tải tam giác p tại ngàm A giảm tuyến tính về 0 tại khoảng cách x (x ≤ l: chỉ trên nhịp AB; x > l: lan sang console, d = x − l). u = min(x, l).',
+    build: v => beam(FC(v), [{ t: 'U', x1: 0, x2: v.x, q1: v.p, q2: 0 }], v.EJ),
+    it: v => [it('A', 'R_A', 'kN', h => h.R('A')), it('B', 'p*x/2-R_A', 'kN', h => h.R('B')),
+      it('M_A', 'M_A', 'kNm', h => h.M(0)), it('M_B', 'M_B', 'kNm', h => h.M(v.l)),
+      it('M_max (nhịp)', null, 'kNm', h => h.Mmax(0, v.l).v, { note: 'lấy theo lời giải số' }), it('f_max (nhịp)', null, 'mm', h => h.fmax(0, v.l).v, { note: 'lấy theo lời giải số' }),
+      it('f đầu console C', null, 'mm', h => h.f(v.l + v.a), { note: 'lấy theo lời giải số (âm = vồng lên)' })] });
 
   // ===== Hai đầu ngàm =====
   const G6 = 'Dầm ngàm hai đầu';
   add({ id: 'D18', g: G6, n: '18 · Tải phân bố đều', src: 'Hình 01 – sơ đồ 18', P: [pl, pq],
     build: v => beam(FF(v), [{ t: 'U', x1: 0, x2: v.l, q1: v.p, q2: v.p }], v.EJ),
     it: v => [it('A = B', 'p*l/2', 'kN', h => h.R('A')), it('M_A = M_B', '-p*l^2/12', 'kNm', h => h.M(0)), it('M_max', 'p*l^2/24', 'kNm', h => h.Mmax().v), it('f_max', 'p*l^4/(384*EJ)', 'mm', h => h.fmax().v)] });
+  add({ id: 'D18b', g: G6, n: '18b · Tải tam giác trên 1 đoạn dầm dài đoạn x (cạnh tam giác ở ngàm A)', src: 'Hình 01 – sơ đồ 18 (mở rộng)', P: [pl, pq, ['x', 'Chiều dài đoạn tải x (từ ngàm A)', 'm', 3]],
+    chk: v => v.x > 0 && v.x <= v.l ? '' : 'Cần 0 < x ≤ l',
+    note: 'Tải tam giác p tại ngàm A giảm tuyến tính về 0 tại khoảng cách x. Với x = l: A = 7pl/20, B = 3pl/20, M_A = −pl²/20, M_B = −pl²/30.',
+    build: v => beam(FF(v), [{ t: 'U', x1: 0, x2: v.x, q1: v.p, q2: 0 }], v.EJ),
+    it: v => [it('M_A', '-p*x^2/l^2*(l^2/6-l*x/6+x^2/20)', 'kNm', h => h.M(0)), it('M_B', '-p*x^3/l^2*(l/12-x/20)', 'kNm', h => h.M(v.l)),
+      it('A', '(p*x*l/2-p*x^2/6-p*x^3/l^2*(l/12-x/20)+p*x^2/l^2*(l^2/6-l*x/6+x^2/20))/l', 'kN', h => h.R('A')),
+      it('B', 'p*x/2-(p*x*l/2-p*x^2/6-p*x^3/l^2*(l/12-x/20)+p*x^2/l^2*(l^2/6-l*x/6+x^2/20))/l', 'kN', h => h.R('B')),
+      it('M_max (nhịp)', null, 'kNm', h => h.Mmax().v, { note: 'lấy theo lời giải số' }), it('f_max', null, 'mm', h => h.fmax().v, { note: 'lấy theo lời giải số' }), it('x (f_max)', null, 'm', h => h.fmax().x)] });
   add({ id: 'D19', g: G6, n: '19 · Lực P tại khoảng cách a', src: 'Hình 01 – sơ đồ 19', P: [pl, pP, ['a', 'Khoảng cách a (từ A)', 'm', 2]], d: [['b', 'l-a', 'm']],
     chk: v => v.a > 0 && v.a < v.l ? '' : 'Cần 0 < a < l',
     build: v => beam(FF(v), [{ t: 'P', x: v.a, P: v.P }], v.EJ),
@@ -693,35 +737,37 @@ svg{display:block;max-width:100%}
       it('M_a', '2*P*a^2*b^2/l^3', 'kNm', h => h.M(v.a)),
       it('f_max (a ≥ b)', '2/3*P*a^3*b^2/(EJ*(3*a+b)^2)', 'mm', h => h.fmax().v, { cond: v.a >= v.b }), it('x (f_max)', '2*a*l/(3*a+b)', 'm', h => h.fmax().x, { cond: v.a >= v.b, tol: 0.02 }),
       it('f_max (a < b)', '2/3*P*a^2*b^3/(EJ*(a+3*b)^2)', 'mm', h => h.fmax().v, { cond: v.a < v.b }), it('x (f_max)', 'l^2/(a+3*b)', 'm', h => h.fmax().x, { cond: v.a < v.b, tol: 0.02 })] });
-  add({ id: 'D20', g: G6, n: '20 · Lực P giữa nhịp', src: 'Hình 01 – sơ đồ 20', P: [pl, pP],
-    build: v => beam(FF(v), [{ t: 'P', x: v.l / 2, P: v.P }], v.EJ),
-    it: v => [it('A = B', 'P/2', 'kN', h => h.R('A')), it('M_A = M_B', '-P*l/8', 'kNm', h => h.M(0)), it('M_l/2', 'P*l/8', 'kNm', h => h.M(v.l / 2)), it('f_max', 'P*l^3/(192*EJ)', 'mm', h => h.fmax().v)] });
+
 
   // ===== Dầm liên tục đều nhịp (Hình 02) =====
-  const LDT = {
-    '2q': { M11: 0.070, MB: -0.125, A: 0.375, B: 1.250, Q1B: -0.625 }, '2P': { M11: 0.156, MB: -0.188, A: 0.313, B: 1.375, Q1B: -0.688 }, '22P': { M11: 0.222, M12: 0.111, MB: -0.333, A: 0.667, B: 2.667, Q1B: -1.333 },
-    '3q': { M11: 0.080, M21: 0.025, MB: -0.100, A: 0.400, B: 1.100, Q1B: -0.600, Q2B: 0.500 }, '3P': { M11: 0.175, M21: 0.100, MB: -0.150, A: 0.350, B: 1.150, Q1B: -0.650, Q2B: 0.500 },
-    '32P': { M11: 0.244, M12: 0.156, M21: 0.067, M22: 0.067, MB: -0.267, A: 0.733, B: 2.267, Q1B: -1.267, Q2B: 1.000 }
-  };
-  add({ id: 'LD', g: 'Dầm liên tục đều nhịp', n: 'Dầm 2–3 nhịp đều, tra hệ số', src: 'Hình 02', P: [['n', 'Số nhịp', '', 2, [2, 3]], ['tai', 'Kiểu tải (trên mọi nhịp)', '', 'q', [['q', 'Phân bố đều p'], ['P', 'Lực P giữa nhịp'], ['2P', 'Hai lực P tại 1/3 nhịp']]], pl, ['W', 'Giá trị p (kN/m) hoặc P (kN)', '', 20]],
-    note: 'Hệ số sổ tay làm tròn 3 chữ số – dung sai so sánh 1%.',
+  add({ id: 'LD', g: 'Dầm liên tục đều nhịp', n: 'Dầm 2–5 nhịp đều, tra hệ số', src: 'Hình 02 (mở rộng 4–5 nhịp)', P: [['n', 'Số nhịp', '', 2, [2, 3, 4, 5]], ['tai', 'Kiểu tải (trên mọi nhịp)', '', 'q', [['q', 'Phân bố đều p'], ['P', 'Lực P giữa nhịp'], ['2P', 'Hai lực P tại 1/3 nhịp']]], pl, ['W', 'Giá trị p (kN/m) hoặc P (kN)', '', 20]],
+    note: 'Hệ số tra bảng làm tròn 3 chữ số (2–3 nhịp: theo sổ tay; 4–5 nhịp: lập từ phương trình 3 mô-men, cùng cách làm tròn) – dung sai so sánh theo sai số làm tròn.',
     build: v => {
-      const n = +v.n, pts = []; for (let i = 0; i <= n; i++) pts.push({ id: 'ABCD'[i], x: i * v.l, sup: i === 0 ? 'pin' : 'roll' });
+      const n = +v.n, pts = []; for (let i = 0; i <= n; i++) pts.push({ id: SUPN[i], x: i * v.l, sup: i === 0 ? 'pin' : 'roll' });
       const L = []; for (let s = 0; s < n; s++) { const x0 = s * v.l; if (v.tai === 'q') L.push({ t: 'U', x1: x0, x2: x0 + v.l, q1: v.W, q2: v.W }); else if (v.tai === 'P') L.push({ t: 'P', x: x0 + v.l / 2, P: v.W }); else { L.push({ t: 'P', x: x0 + v.l / 3, P: v.W }); L.push({ t: 'P', x: x0 + 2 * v.l / 3, P: v.W }); } }
       return beam(pts, L, v.EJ);
     },
     it: v => {
-      const c = LDT[v.n + v.tai], q = v.tai === 'q', W = q ? 'W*l' : 'W', Wm = q ? 'W*l^2' : 'W*l', l = v.l, o = [], t = { tol: 0.01 };
-      const pos = { q: null, P: 0.5, '2P': 1 / 3 };
-      o.push(it('M11 (nhịp 1)', c.M11 + '*' + Wm, 'kNm', h => q ? h.Mmax(0, l).v : h.M(pos[v.tai] * l), t));
-      if (c.M12) o.push(it('M12 (nhịp 1, dưới lực thứ 2)', c.M12 + '*' + Wm, 'kNm', h => h.M(2 * l / 3), t));
-      if (c.M21) o.push(it('M21 (nhịp 2)', c.M21 + '*' + Wm, 'kNm', h => q ? h.Mmax(l, 2 * l).v : h.M(l + pos[v.tai] * l), t));
-      if (c.M22) o.push(it('M22 (nhịp 2, dưới lực thứ 2)', c.M22 + '*' + Wm, 'kNm', h => h.M(l + 2 * l / 3), t));
-      o.push(it('M_B', c.MB + '*' + Wm, 'kNm', h => h.M(l), t));
-      o.push(it('A = Q1A', c.A + '*' + W, 'kN', h => h.R('A'), t));
-      o.push(it('B', c.B + '*' + W, 'kN', h => h.R('B'), t));
-      o.push(it('Q1B', c.Q1B + '*' + W, 'kN', h => h.V(l, 'L'), t));
-      if (c.Q2B) o.push(it('Q2B = −Q2C', c.Q2B + '*' + W, 'kN', h => h.V(l, 'R'), t));
+      const n = +v.n, q = v.tai === 'q', tai = { q: 'q', P: 'P1', '2P': 'P2' }[v.tai], W = q ? 'W*l' : 'W', Wm = q ? 'W*l^2' : 'W*l', l = v.l, o = [];
+      const r = tmSolve(new Array(n).fill(1), new Array(n).fill(1), tai), rd = c => Math.sign(c) * Math.round(Math.abs(c) * 1000) / 1000, op = c => ({ tol: Math.max(0.01, 0.0006 / Math.max(Math.abs(rd(c)), 1e-6)) });
+      const cf = (c, e) => (rd(c) < 0 ? '(' + rd(c).toFixed(3) + ')' : rd(c).toFixed(3)) + '*' + e;
+      const ns = Math.ceil(n / 2), nsp = Math.floor(n / 2); // đối xứng: chỉ in nửa dầm
+      o.push({ s: '— Mô-men nhịp (nửa dầm – đối xứng) —', head: true });
+      for (let i = 0; i < ns; i++) {
+        const x0 = i * l;
+        if (q) o.push(it(`M${i + 1}1 (nhịp ${i + 1}, max)`, cf(r.spans[i].v, Wm), 'kNm', h => h.Mmax(x0, x0 + l).v, op(r.spans[i].v)));
+        else (v.tai === 'P' ? [0.5] : [1 / 3, 2 / 3]).forEach((t, k) => { const c = spanM(1, 1, tai, r.M[i], r.M[i + 1], t); o.push(it(`M${i + 1}${k + 1} (nhịp ${i + 1}, dưới lực ${k + 1})`, cf(c, Wm), 'kNm', h => h.M(x0 + t * l), op(c))); });
+      }
+      o.push({ s: '— Mô-men gối —', head: true });
+      for (let i = 1; i <= nsp; i++) o.push(it(`M_${SUPN[i]}`, cf(r.M[i], Wm), 'kNm', h => h.M(i * l), op(r.M[i])));
+      o.push({ s: '— Phản lực gối —', head: true });
+      for (let i = 0; i <= nsp; i++) o.push(it(i ? SUPN[i] : 'A = Q1A', cf(r.R[i], W), 'kN', h => h.R(SUPN[i]), op(r.R[i])));
+      o.push({ s: '— Lực cắt tại gối trung gian —', head: true });
+      for (let i = 1; i <= nsp; i++) {
+        const [, rR] = spanR(1, 1, tai, r.M[i - 1], r.M[i]), [lL] = spanR(1, 1, tai, r.M[i], r.M[i + 1]);
+        o.push(it(`Q${i}${SUPN[i]}`, cf(-rR, W), 'kN', h => h.V(i * l, 'L'), op(rR)));
+        o.push(it(`Q${i + 1}${SUPN[i]}`, cf(lL, W), 'kN', h => h.V(i * l, 'R'), op(lL)));
+      }
       return o;
     } });
 
@@ -800,10 +846,10 @@ svg{display:block;max-width:100%}
     build: v => portal(v, 'K2'), it: kit('P*h/2*(1-3*mu*L1)', 'P*h/2*(1-3*mu*L1)', 'P*h/2*(3*mu*L1)', 'P*h/2*(3*mu*L1)') });
   add({ id: 'K3', g: 'Khung cổng chân ngàm', n: 'K3 · Lực đứng P trên dầm tại u·l', src: 'Hình 04 – K3', stiff: 'frame', P: [...KP, ['P', 'Lực P', 'kN', 50], ['u', 'Tỉ số u (vị trí lực = u·l)', '', 0.3]], d: [['v', '1-u', ''], ...KD], note: KN,
     chk: v => v.u > 0 && v.u < 1 ? '' : 'Cần 0 < u < 1',
-    bookErr: 'Sổ tay in M_b = Puvl/2·[k − (v−u)L′] giống M_a – sai dấu. Đã sửa: M_b = Puvl/2·[k + (v−u)L′] (kiểm chứng FEM).',
+    fixNote: 'Sổ tay in M_b = Puvl/2·[k − (v−u)L′] giống M_a – sai dấu. Đã sửa: M_b = Puvl/2·[k + (v−u)L′] (kiểm chứng FEM).',
     build: v => portal(v, 'K3'), it: kit('P*u*v*l/2*(k-(v-u)*L1)', 'P*u*v*l/2*(k+(v-u)*L1)', 'P*u*v*l*(0.5*(v-u)*L1+k)', 'P*u*v*l*(k-0.5*(v-u)*L1)') });
   add({ id: 'K4', g: 'Khung cổng chân ngàm', n: 'K4 · Tải ngang q phân bố trên cột trái', src: 'Hình 04 – K4', stiff: 'frame', P: [...KP, ['q', 'Tải q', 'kN/m', 5]], d: KD, note: KN,
-    bookErr: 'Sổ tay in M_c = qh²/24·(12L′ − k), M_d = qh²/24·(12L′ + k) – thiếu thừa số μ. Đã sửa: M_c = qh²μ/24·(12L′ − k), M_d = qh²μ/24·(12L′ + k) (kiểm chứng FEM với nhiều tỉ lệ độ cứng).',
+    fixNote: 'Sổ tay in M_c = qh²/24·(12L′ − k), M_d = qh²/24·(12L′ + k) – thiếu thừa số μ. Đã sửa: M_c = qh²μ/24·(12L′ − k), M_d = qh²μ/24·(12L′ + k) (kiểm chứng FEM với nhiều tỉ lệ độ cứng).',
     build: v => portal(v, 'K4'), it: kit('q*h^2/24*((39+19*mu)*k-12*mu*L1-12)', 'q*h^2/24*((9+5*mu)*k-12*mu*L1)', 'q*h^2*mu/24*(12*L1-k)', 'q*h^2*mu/24*(12*L1+k)') });
 
   // ---------- Tính một sơ đồ ----------
@@ -960,6 +1006,8 @@ const toT = (v, u) => TU[u] ? `${fx(v / TF(), 3)} ${TU[u]}` : '';
 function unitOf(t, k, unit, r) { if (unit) return unit; if (/^[gp]\d$/.test(k) || k === 'W') return (r.tai === 'q') ? 'kN/m' : 'kN'; return unit; }
 const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 const GN = g => ROM[[...new Set(SoDo.list.map(t => t.g))].indexOf(g)];
+// cây thư mục: I. Nhóm → I.1. Sơ đồ
+(() => { const cnt = {}; SoDo.list.forEach(t => { if (t.n0) return; t.n0 = t.n; cnt[t.g] = (cnt[t.g] || 0) + 1; const nm = t.n.replace(/^(\d+[a-z]?|K\d)\s*·\s*/, ''); t.code = `${GN(t.g)}.${cnt[t.g]}`; t.n = `${t.code}. ${nm.charAt(0).toUpperCase()}${nm.slice(1)}`; }); })();
 const tpl = () => SoDo.list.find(t => t.id === ST.cur) || SoDo.list[0];
 const defStiff = () => ({ mode: 'rect', mat: 'B20', E: 27500, b: 200, h: 300, I: 45000, EJ: 12375, useRf: 1 });
 function inp(t) { ST.inp[t.id] = ST.inp[t.id] || {}; const o = ST.inp[t.id]; if (!o._s1) o._s1 = defStiff(); if (!o._s2) o._s2 = defStiff(); o._s1.kind = t.stiff === 'frame' ? 'col' : 'beam'; o._s2.kind = 'beam'; return o; }
@@ -1101,7 +1149,7 @@ function renderList() {
   SoDo.list.forEach(t => {
     if (q && !(t.n + ' ' + t.g + ' ' + t.id + ' ' + t.src).toLowerCase().includes(q)) return;
     if (t.g !== g) { g = t.g; h += `<div class="grp">${GN(g)}. ${esc(g.toUpperCase())}</div>`; }
-    h += `<div class="itm${t.id === ST.cur ? ' on' : ''}" data-id="${t.id}">${esc(t.n)}${t.bookErr ? '<span class="warn" title="Sổ tay có lỗi in – đã sửa">●</span>' : ''}</div>`;
+    h += `<div class="itm${t.id === ST.cur ? ' on' : ''}" data-id="${t.id}">${esc(t.n)}</div>`;
   });
   $('#list').innerHTML = h;
   $('#list').querySelectorAll('.itm').forEach(e => e.onclick = () => { ST.cur = e.dataset.id; save(); renderList(); renderMain(); document.body.classList.remove('side-open'); const mn = document.getElementById('main'); if (mn) mn.scrollTop = 0; });
@@ -1446,18 +1494,18 @@ function qCard(t, r, q, mk) {
 // ================= X. TỔ HỢP TẢI – cộng tác dụng =================
 const SCH = {
   I: { n: 'Dầm console (ngàm tại B)', tids: ['D01', 'D02', 'D03'], sh: ['l'] },
-  II: { n: 'Dầm trên hai gối tựa', tids: ['D04', 'D05', 'D06', 'D07', 'D08', 'D09'], sh: ['l'] },
-  III: { n: 'Dầm hai gối có hai console đối xứng', tids: ['D10a', 'D10b'], sh: ['l', 'a'] },
-  IV: { n: 'Dầm một đầu ngàm, một đầu gối', tids: ['D11', 'D12', 'D13', 'D14', 'D15'], sh: ['l'] },
-  V: { n: 'Dầm một đầu ngàm, một đầu console', tids: ['D16', 'D17'], sh: ['l', 'a'] },
-  VI: { n: 'Dầm ngàm hai đầu', tids: ['D18', 'D19', 'D20'], sh: ['l'] }
+  II: { n: 'Dầm trên hai gối tựa', tids: ['D05', 'D06', 'D07', 'D08', 'D08b', 'D09'], sh: ['l'] },
+  III: { n: 'Dầm hai gối có hai console đối xứng', tids: ['D10a', 'D10b', 'D10c'], sh: ['l', 'a'] },
+  IV: { n: 'Dầm một đầu ngàm, một đầu gối', tids: ['D11', 'D13', 'D14'], sh: ['l'] },
+  V: { n: 'Dầm một đầu ngàm, một đầu console', tids: ['D16', 'D16b', 'D17', 'D17b'], sh: ['l', 'a'] },
+  VI: { n: 'Dầm ngàm hai đầu', tids: ['D18', 'D18b', 'D19'], sh: ['l'] }
 };
-const SCHX = { n: 'Tổ hợp nhiều sơ đồ liên kết', tids: ['D01', 'D02', 'D03', 'D04', 'D05', 'D06', 'D07', 'D08', 'D09', 'D10a', 'D10b', 'D11', 'D12', 'D13', 'D14', 'D15', 'D16', 'D17', 'D18', 'D19', 'D20'], sh: ['l'] };
+const SCHX = { n: 'Tổ hợp nhiều sơ đồ liên kết', tids: ['D01', 'D02', 'D03', 'D05', 'D06', 'D07', 'D08', 'D08b', 'D09', 'D10a', 'D10b', 'D10c', 'D11', 'D13', 'D14', 'D16', 'D16b', 'D17', 'D17b', 'D18', 'D18b', 'D19'], sh: ['l'] };
 function schOf(o) { if (!o.mixed) return SCH[o.scheme]; const k = Object.keys(SCH).find(k => SCH[k].tids.includes(o.cases[0] && o.cases[0].tid)) || 'II'; return SCH[k]; }
 const CASEC = ['#2E5597', '#0b8a7a', '#8e44ad', '#d35400', '#16a085', '#7f8c8d', '#b7950b', '#c0392b'];
 const TT = id => SoDo.list.find(t => t.id === id);
 function thState(o, mixed) {
-  if (mixed && o.mixed !== 2) { o.mixed = 2; o.scheme = 'X'; o.sh = { l: 5, a: 1.5 }; o.cases = [{ name: 'SĐ1', tid: 'D07', vals: { p: 15 }, k: 1 }, { name: 'SĐ2', tid: 'D04', vals: { P: 30 }, k: 1 }]; }
+  if (mixed && o.mixed !== 2) { o.mixed = 2; o.scheme = 'X'; o.sh = { l: 5, a: 1.5 }; o.cases = [{ name: 'SĐ1', tid: 'D07', vals: { p: 15 }, k: 1 }, { name: 'SĐ2', tid: 'D05', vals: { P: 30, a: 2.5 }, k: 1 }]; }
   if (o.sh && o.sh.a == null) o.sh.a = 1.5;
   if (!o.scheme) { o.scheme = 'II'; o.sh = { l: 5, a: 1.5 }; o.cases = [{ name: 'TT', tid: 'D07', vals: { p: 15 }, k: 1.1 }, { name: 'HT', tid: 'D07', vals: { p: 8 }, k: 1.2 }, { name: 'P thiết bị', tid: 'D05', vals: { P: 20, a: 1.5 }, k: 1.05 }]; }
   return o;
@@ -1801,7 +1849,7 @@ function renderMain() {
   const r = R = run();
   const q = getQ(o, t);
   let h = `<h2>${esc(t.n)}</h2><div class="src">${GN(t.g)}. ${esc(t.g)} · Nguồn: ${esc(t.src)} · Mã ${t.id}</div>`;
-  if (t.bookErr) h += `<div class="box err"><b>Lỗi in trong sổ tay đã phát hiện:</b> ${esc(t.bookErr)}</div>`;
+  if (t.fixNote) h += `<div class="box note"><b>Đã hiệu chỉnh so với sổ tay (kiểm chứng FEM):</b> ${esc(t.fixNote)}</div>`;
   const srcs = Object.entries(o._src || {}).filter(([k, x]) => +o[k] === x.val);
   const pCard = `<div class="card"><h3>Tham biến</h3>${paramForm(t, o)}${srcs.length ? '<div class="der" style="color:#0b6b5f">' + srcs.map(([k, x]) => `${esc(x.txt.replace(/^pᵢ/, k))}<br><span style="font-family:Inter,Arial">${esc(x.ref)}</span>`).join('<br>') + '</div>' : ''}${(r.derived || []).length ? '<div class="der">' + r.derived.map(d => `${esc(SoDo.pretty(d.s))} = ${esc(SoDo.pretty(d.e))} = ${esc(d.sub)} = <b>${SoDo.fmtN(d.val)}</b> ${d.u || ''}`).join('<br>') + '</div>' : ''}
       ${t.stiff === 'frame' ? stiffForm(o._s1, 1, 'Độ cứng cột – J₁') + stiffForm(o._s2, 2, 'Độ cứng dầm – J₂') : stiffForm(o._s1, 1, 'Độ cứng EJ')}</div>`;
@@ -1850,7 +1898,7 @@ function reportHTML(r) {
    <table class="meta"><tr><td>Công trình: <b>${esc(I.name)}</b></td><td>Hạng mục / cấu kiện: ${esc(I.item)}</td><td style="text-align:right">Ngày: ${new Date().toLocaleDateString('vi-VN')}</td></tr></table>
    <div class="row2"><div><h2>1. Sơ đồ tính</h2><div class="fig">${full(frame ? frameSVG(r, null, 420) : beamSchematic(r, 640))}</div><div class="sm">Nguồn công thức: ${esc(t.src)}.${t.note ? ' ' + esc(t.note) : ''}</div></div>
    <div><h2>2. Số liệu</h2>${t.id === 'LK' ? lkPars(r) : ''}<table${t.id === 'LK' ? ' style="display:none"' : ''}><tr><th>Tham biến</th><th>Giá trị</th><th>Đ.vị</th></tr>${pars.map(p => `<tr><td>${esc(p[0])}</td><td class="n">${esc(p[1])}</td><td>${esc(p[2])}</td></tr>`).join('')}${r.derived.map(d => `<tr><td>${esc(SoDo.pretty(d.s))} = ${esc(SoDo.pretty(d.e))}</td><td class="n">${SoDo.fmtN(d.val)}</td><td>${esc(d.u || '')}</td></tr>`).join('')}</table>${secs ? `<div style="display:flex;gap:6px">${secs}</div>` : ''}${sv.map(x => `<div class="sm">${esc(x)}</div>`).join('')}${Object.entries(o._src || {}).filter(([k, x]) => +o[k] === x.val).map(([k, x]) => `<div class="sm"><b>${esc(k)}</b>: ${esc(x.txt)} – ${esc(x.ref)}</div>`).join('')}</div></div>
-   ${t.bookErr ? `<div class="box"><b>Hiệu chỉnh sổ tay:</b> ${esc(t.bookErr)}</div>` : ''}
+   ${t.fixNote ? `<div class="sm"><b>Hiệu chỉnh so với sổ tay:</b> ${esc(t.fixNote)}</div>` : ''}
    <h2>3. Nội lực, chuyển vị</h2>${t.id === 'LK' ? lkTable(r) : itemsTable(r.items, true).replace(/class="okc">✔/g, '>Đạt').replace(/class="badc">✖/g, '>Lệch').replace(/<div class="mut" style="font-size:11px">/g, '<div class="sm">')}
    <div class="sm">Quy đổi: 1 T = ${fx(TF(), 2)} kN. Quy ước: M dương căng thớ dưới; phản lực dương hướng lên; f dương hướng xuống. "Lời giải số": kiểm chứng bằng phần tử hữu hạn (PA1 Frame2D v${Frame2D.version}), dung sai 0,5%.</div>
    <h2>4. Biểu đồ nội lực, chuyển vị</h2>`;

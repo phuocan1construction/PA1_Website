@@ -156,7 +156,7 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
 .chk input{accent-color:var(--accent);width:16px;height:16px}
 @media print{
   :root:not(#p),:root[data-theme]:not(#p){--bg:#fff;--surface:#fff;--surface-2:#F4F1EA;--line:#ccc;--title:#A97318;--accent:#D9A441;--fg:#1C1C1C;--muted:#555;--good:#B3261E;--good-bg:rgba(179,38,30,.08);--bad:#1C1C1C;--bad-bg:#eee;color-scheme:light}
-  .steps,.tabs,.units,.hist,.ruler-meta,.range-form,.tol,.btn,.alt,.sticky,#rulerBox,.frame,details{display:none!important}
+  .home,.steps,.tabs,.units,.hist,.ruler-meta,.range-form,.tol,.btn,.alt,.sticky,#rulerBox,.frame,details{display:none!important}
   .panel,.dim,.card{break-inside:avoid}
   body{padding:0}
 }
@@ -168,6 +168,46 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
   .verdict{grid-template-columns:1fr;gap:10px}
   .stamp{justify-self:start}
 }
+
+/* ---------- Mobile tiện dụng ---------- */
+.home{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:6px 10px;margin-bottom:10px}
+.home:hover{color:var(--title);border-color:var(--accent)}
+@media (pointer:coarse){.ruler-meta span:last-child{display:none}}
+@media (max-width:720px){
+  body{padding-block:12px 32px}
+  .wrap{gap:16px}
+  .panel{padding:14px}
+  .sticky{margin-inline:-16px;padding-inline:16px;font-size:12px}
+  .sticky .sv{font-size:18px}
+  .u{padding:9px 16px;font-size:14px}
+  .steps{grid-template-columns:repeat(4,1fr);width:100%}
+  .steps .btn{min-height:46px;font-size:15px}
+  .btn{min-height:42px}
+  .tab{padding:12px 10px;align-items:center}
+  .pchip{padding:10px 12px;font-size:14px}
+  .chip{padding:9px 11px}
+  .field input,.tol input,.frame input[type=number]{font-size:16px;padding:9px 10px}
+  .field{flex:1 1 40%}.field input{width:100%}
+  .chk input{width:20px;height:20px}
+  .chk{min-height:36px}
+  /* Bảng dò khoảng -> thẻ */
+  .tbl-wrap{border:0;overflow:visible}
+  table{min-width:0}
+  thead{display:none}
+  table,tbody,tr,td{display:block}
+  #rBody tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px;border:1px solid var(--line);border-radius:4px;padding:12px;margin-bottom:10px;background:var(--surface)}
+  #rBody td{border:0;padding:0;white-space:normal}
+  #rBody td.empty{grid-column:1/-1}
+  #rBody td:nth-child(-n+3)::before{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  #rBody td:nth-child(1)::before{content:"Từ (mm)"}
+  #rBody td:nth-child(2)::before{content:"Đến (mm)"}
+  #rBody td:nth-child(3)::before{content:"Rộng"}
+  #rBody td.num{font-size:16px;font-weight:500}
+  #rBody td:nth-child(4){grid-column:1/-1;font-weight:600}
+  #rBody td:nth-child(5){grid-column:1/-1;line-height:1.9}
+  #rBody td:nth-child(6){grid-column:1/-1}
+  #rBody td:nth-child(6) button{width:100%;min-height:42px;font-size:14px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <style>html{-webkit-text-size-adjust:100%} body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
@@ -176,6 +216,7 @@ footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);lette
 <div class="wrap">
   <header>
     <div>
+      <a class="home" href="https://phuocan1construction.com/cam-nang/">← Cẩm nang PA1</a>
       <div class="eyebrow">PA1 Construction · Công cụ thiết kế</div>
       <h1>THƯỚC LỖ BAN</h1>
       <p>Nhập kích thước (mm), chọn loại thước. Kéo thước sang trái/phải để dò. Kết quả hiển thị đồng thời cả 3 loại thước.</p>

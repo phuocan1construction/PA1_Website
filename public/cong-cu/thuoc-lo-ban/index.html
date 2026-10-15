@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thước Lỗ Ban Online – Tra kích thước cửa, tủ, bàn thờ | Phước An 1 Construction</title>
+<meta name="description" content="Thước Lỗ Ban online 52,2 / 42,9 / 38,8 cm – tra cung tốt xấu, đề xuất kích thước cửa, tủ, giường, trang thờ, bàn thờ chuẩn phong thủy. Công cụ miễn phí của Phước An 1 Construction.">
+<meta name="keywords" content="thước lỗ ban, thước lỗ ban online, thước lỗ ban 52.2, thước lỗ ban 42.9, thước lỗ ban 38.8, kích thước cửa phong thủy, kích thước bàn thờ">
+<meta name="author" content="Phước An 1 Construction">
+<meta name="theme-color" content="#1C1C1C">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:site_name" content="Phước An 1 Construction">
+<meta property="og:title" content="Thước Lỗ Ban Online – Phước An 1 Construction">
+<meta property="og:description" content="Thước Lỗ Ban online 52,2 / 42,9 / 38,8 cm – tra cung tốt xấu, đề xuất kích thước cửa, tủ, giường, trang thờ, bàn thờ chuẩn phong thủy. Công cụ miễn phí của Phước An 1 Construction.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Thước Lỗ Ban Online","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","inLanguage":"vi","offers":{"@type":"Offer","price":"0","priceCurrency":"VND"},
+"publisher":{"@type":"Organization","name":"Công ty Kiến Trúc & Xây Dựng Phước An 1","url":"https://phuocan1construction.com","telephone":"0523023023","email":"phuocan1construction@gmail.com","address":"243/15A Bình Thung, Đông Hòa, Hồ Chí Minh"}}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Oswald:wght@500;600;700&display=swap">
+<style>
+/* Layout: một cột công cụ — ô nhập lớn, thước kéo được, 3 thẻ kết quả, gợi ý, dò khoảng. Dark-first theo brand PA1. */
+:root{
+  --bg:#1C1C1C; --surface:#242321; --surface-2:#2C2A27; --line:#3A3733;
+  --title:#D9A441; --accent:#E8BE6B; --fg:#F2EDE3; --muted:#9A9A9A;
+  --good:#EA6253; --good-bg:rgba(234,98,83,.15); --bad:#BDB6AA; --bad-bg:rgba(189,182,170,.10);
+  --needle:#E8BE6B; --on-accent:#1C1C1C;
+  --tape:#E8BE6B; --tape-line:#B98A2E; --tape-red:#A51C1C; --tape-ink:#1C1C1C;
+  --f-display:"Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#F8F6F1; --surface:#FFFFFF; --surface-2:#F1EDE4; --line:#E2DCCF;
+  --title:#A97318; --accent:#D9A441; --fg:#1C1C1C; --muted:#6B6B6B;
+  --good:#B3261E; --good-bg:rgba(179,38,30,.10); --bad:#1C1C1C; --bad-bg:rgba(28,28,28,.06);
+  --needle:#A97318; --on-accent:#1C1C1C; color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#F8F6F1; --surface:#FFFFFF; --surface-2:#F1EDE4; --line:#E2DCCF;
+  --title:#A97318; --accent:#D9A441; --fg:#1C1C1C; --muted:#6B6B6B;
+  --good:#B3261E; --good-bg:rgba(179,38,30,.10); --bad:#1C1C1C; --bad-bg:rgba(28,28,28,.06);
+  --needle:#A97318; --on-accent:#1C1C1C; color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.eyebrow,.label,.cap{font-family:var(--f-mono);text-transform:uppercase;letter-spacing:2px;font-size:11px;color:var(--muted)}
+.label{letter-spacing:1px}
+h1{font-family:var(--f-display);font-weight:700;color:var(--title);font-size:clamp(34px,6vw,48px);line-height:1;margin:6px 0 0;letter-spacing:.5px;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:17px;color:var(--title);margin:0}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px}
+header p{margin:6px 0 0;color:var(--muted);max-width:56ch;font-size:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px}
+.input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end}
+.measure{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+#len{font-family:var(--f-display);font-weight:700;font-size:clamp(44px,9vw,72px);line-height:1;color:var(--fg);background:transparent;border:0;border-bottom:2px solid var(--accent);width:min(6.2ch,100%);padding:0 0 4px;font-variant-numeric:tabular-nums;outline:none}
+#len:focus-visible{border-bottom-color:var(--title)}
+.units{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}.u{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);color:var(--muted);border:0;padding:6px 10px}.u[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.meaning{margin:6px 0 0;font-size:14px;color:var(--fg)}
+.cm{font-family:var(--f-mono);font-size:13px;color:var(--muted);margin-top:8px}
+.steps{display:grid;grid-template-columns:repeat(4,auto);gap:6px}
+button{font:inherit;cursor:pointer}
+.btn{font-family:var(--f-mono);font-size:13px;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:8px 11px;min-width:52px}
+.btn:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.tab{background:var(--surface);border:0;border-right:1px solid var(--line);padding:12px 12px 11px;text-align:left;color:var(--fg);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tab:last-child{border-right:0}
+.tab b{font-family:var(--f-display);font-weight:600;font-size:20px;letter-spacing:.5px}
+.tab span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.tab[aria-selected="true"] span{color:var(--on-accent);opacity:.75}
+.ruler-box{position:relative;border:1px solid var(--line);border-radius:4px;background:var(--surface);overflow:hidden;touch-action:none;cursor:grab;user-select:none}
+.ruler-box:active{cursor:grabbing}
+canvas{display:block;width:100%;height:212px}
+.ruler-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
+.verdict{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.stamp{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:1px;padding:10px 16px;border:2px solid currentColor;border-radius:3px;text-transform:uppercase;line-height:1}
+.good{color:var(--good)} .bad{color:var(--bad)}
+.verdict-text{min-width:0}
+.verdict-text .big{font-family:var(--f-display);font-weight:600;font-size:24px;line-height:1.15}
+.verdict-text p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card.sel{border-color:var(--accent)}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h3{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0;letter-spacing:.5px}
+.pill{font-family:var(--f-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px}
+.pill.good{background:var(--good-bg)} .pill.bad{background:var(--bad-bg)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv dt{font-family:var(--f-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.kv dd{margin:0;font-weight:500}
+.card .use{font-size:12.5px;color:var(--muted);margin:0}
+.suggest{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sug{background:var(--surface-2);border-radius:4px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sug .v{font-family:var(--f-display);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums}
+.sug .n{font-size:12.5px;color:var(--muted)}
+.sug button{flex:none}
+.range-form{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field input{font-family:var(--f-mono);font-size:15px;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:8px 10px;width:120px;font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:540px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-mono);font-weight:400;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
+td.num{font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:13px}
+tr:last-child td{border-bottom:0}
+td button{font-family:var(--f-mono);font-size:12px;background:none;border:1px solid var(--line);color:var(--fg);border-radius:3px;padding:3px 8px}
+.dot{display:inline-block;font-family:var(--f-mono);font-size:11px;margin-right:8px}
+.legend{display:flex;gap:14px;flex-wrap:wrap}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+footer{border-top:1px solid var(--line);padding-top:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer .co{font-family:var(--f-display);font-weight:600;color:var(--title);letter-spacing:1px;text-transform:uppercase}
+.note{font-size:12.5px;color:var(--muted);max-width:70ch;margin:0}
+.empty{padding:14px;color:var(--muted);font-size:14px}
+.p-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.pchips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px}
+.pchip{font-family:var(--f-body);font-size:13.5px;font-weight:500;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:7px 12px}
+.pchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tol{display:flex;align-items:center;gap:8px}
+.tol input{font-family:var(--f-mono);font-size:14px;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:6px 8px;width:64px}
+.dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.dim{border:1px solid var(--line);border-radius:4px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dim-h{display:flex;flex-direction:column;gap:2px}
+.dim-h b{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.want{display:flex;align-items:baseline;gap:8px}
+.want input{font-family:var(--f-display);font-weight:600;font-size:26px;color:var(--fg);background:transparent;border:0;border-bottom:2px solid var(--line);width:5.2ch;padding:0 0 2px;font-variant-numeric:tabular-nums}
+.want input:focus{border-bottom-color:var(--accent);outline:none}
+.res{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.res .rv{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.res .rd{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.warn{font-size:12.5px;color:var(--bad);border-left:2px solid var(--bad);padding-left:8px}
+.alt{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.answer{margin-top:14px;background:var(--surface-2);border-radius:4px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.answer .av{font-family:var(--f-display);font-weight:600;font-size:22px;min-width:0}
+.chip{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--fg);background:var(--good-bg);border:1px solid transparent;border-radius:3px;padding:6px 9px}
+.chip:hover{border-color:var(--good)}
+.chip.best{background:var(--good);color:var(--bg);font-weight:500}
+.dim details{font-size:13px;color:var(--muted)}
+.dim summary{cursor:pointer;font-family:var(--f-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase}
+.dim details p{margin:6px 0 0;font-family:var(--f-mono);font-size:12px;line-height:1.7}
+@media (max-width:720px){
+  .input-row{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr}
+  .suggest{grid-template-columns:1fr}
+  .tab span{display:none}
+  .verdict{grid-template-columns:1fr;gap:10px}
+  .stamp{justify-self:start}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>html{-webkit-text-size-adjust:100%} body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">PA1 Construction · Công cụ thiết kế</div>
+      <h1>THƯỚC LỖ BAN</h1>
+      <p>Nhập kích thước (mm), chọn loại thước. Kéo thước sang trái/phải để dò. Kết quả hiển thị đồng thời cả 3 loại thước.</p>
+    </div>
+    <div class="legend cap">
+      <span><i class="sw" style="background:var(--tape-red)"></i>Đỏ · cung tốt</span>
+      <span><i class="sw" style="background:var(--tape-ink);outline:1px solid var(--line)"></i>Đen · cung xấu</span>
+    </div>
+  </header>
+
+  <section class="panel input-row" aria-label="Kích thước cần tra">
+    <div>
+      <label class="label" for="len">Kích thước cần tra</label>
+      <div class="measure">
+        <input id="len" type="number" inputmode="decimal" min="1" step="1" value="2130">
+        <div class="units" role="group" aria-label="Đơn vị"><button class="u" data-u="mm">mm</button><button class="u" data-u="cm">cm</button></div>
+      </div>
+      <div class="cm" id="cmOut"></div>
+    </div>
+    <div class="steps" aria-label="Điều chỉnh nhanh">
+      <button class="btn" data-d="-10">−10</button>
+      <button class="btn" data-d="-1">−1</button>
+      <button class="btn" data-d="1">+1</button>
+      <button class="btn" data-d="10">+10</button>
+    </div>
+  </section>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+
+  <section>
+    <div class="ruler-box" id="rulerBox" aria-label="Thước Lỗ Ban, kéo để dò kích thước">
+      <canvas id="cv"></canvas>
+    </div>
+    <div class="ruler-meta cap"><span id="rulerInfo"></span><span>Kéo dải thước để dò · ← → trên bàn phím</span></div>
+  </section>
+
+  <section class="panel verdict" aria-live="polite">
+    <div class="stamp" id="stamp">Tốt</div>
+    <div class="verdict-text">
+      <div class="label" id="vLabel">Thước 52,2 cm · Khối thông thủy</div>
+      <div class="big" id="vBig"></div>
+      <p class="meaning" id="vMean"></p>
+      <p id="vSub"></p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Gợi ý kích thước tốt gần nhất</h2>
+    <p class="note" style="margin:4px 0 12px" id="sugNote"></p>
+    <div class="suggest" id="sug"></div>
+  </section>
+
+  <section class="panel" id="presets">
+    <div class="p-head">
+      <div>
+        <h2>Đề xuất kích thước theo cấu kiện</h2>
+        <p class="note" style="margin-top:4px">Chọn cấu kiện, nhập kích thước anh muốn. App trả về số Lỗ Ban gần nhất, tròn 10 mm, vẫn nằm trong cung tốt khi lệch ± dung sai thi công.</p>
+      </div>
+      <label class="tol cap" for="tol">Dung sai ± <input id="tol" type="number" min="0" max="15" step="1" value="3"> mm</label>
+    </div>
+    <div class="label" style="margin-top:14px">1 · Chọn cấu kiện</div>
+    <div class="pchips" id="pchips" role="group" aria-label="Chọn cấu kiện"></div>
+    <p class="note" id="pnote"></p>
+    <div class="label" style="margin-top:16px">2 · Nhập kích thước mong muốn</div>
+    <div class="dims" id="dims"></div>
+    <div class="answer" id="answer"></div>
+  </section>
+
+  <section>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Dò khoảng kích thước tốt</h2>
+    <div class="range-form">
+      <div class="field"><label class="label" for="rFrom">Từ (mm)</label><input id="rFrom" type="number" min="1" value="2000"></div>
+      <div class="field"><label class="label" for="rTo">Đến (mm)</label><input id="rTo" type="number" min="1" value="2400"></div>
+      <span class="cap" id="rInfo"></span>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Từ (mm)</th><th>Đến (mm)</th><th>Rộng</th><th>Cung</th><th>Tâm khoảng — thước khác</th><th></th></tr></thead>
+      <tbody id="rBody"></tbody>
+    </table></div>
+  </section>
+
+  <footer>
+    <div>
+      <div class="co">Phước An 1 Construction</div>
+      <div class="cap" style="letter-spacing:1px"><a href="tel:0523023023" style="color:inherit">0523.023.023</a> · <a href="https://phuocan1construction.com" style="color:inherit">phuocan1construction.com</a></div>
+    </div>
+    <p class="note">Thước Lỗ Ban là quy ước phong thủy dân gian, không phải tiêu chuẩn kỹ thuật (TCVN/QCVN). Tên cung con có khác biệt nhỏ giữa các nguồn. Kích thước lọt lòng vẫn phải đáp ứng QCVN 06 về thoát nạn và công năng sử dụng.</p>
+  </footer>
+</div>
+
+<script>
+const RULERS=[
+ {id:"522",name:"52,2 cm",period:522,use:"Khối thông thủy",desc:"Lọt lòng cửa đi, cửa sổ, ô thoáng, giếng trời",
+  cungs:[["Quý Nhân",1,["Quyền lộc","Trung tín","Tác quan","Phát đạt","Thông minh"],"Gia cảnh khá lên, làm ăn phát đạt, bạn bè trung thành, con cái thông minh hiếu thảo."],
+   ["Hiểm Họa",0,["Án thành","Hỗn nhân","Thất hiếu","Tai họa","Trường bệnh"],"Gia cảnh hao tán, dễ gặp họa bất ngờ, con cái gặp trắc trở."],
+   ["Thiên Tai",0,["Hoàn tử","Quan tài","Thân tàn","Thất tài","Hệ quả"],"Đề phòng ốm đau, mất của, vợ chồng bất hòa."],
+   ["Thiên Tài",1,["Thi thơ","Văn học","Thanh quý","Tác lộc","Thiên lộc"],"Chủ nhà gặp may về tài lộc, có thêm nhiều cơ hội làm ăn."],
+   ["Nhân Lộc",1,["Trí tồn","Phú quý","Tiến bửu","Thập thiện","Văn chương"],"Gia chủ luôn gặp may, con cái thành đạt, gia đạo êm ấm."],
+   ["Cô Độc",0,["Bạc nghịch","Vô vọng","Ly tán","Tửu thục","Dâm dục"],"Hao người, hao của, gia đình dễ chia ly."],
+   ["Thiên Tặc",0,["Phong bệnh","Chiêu ôn","Ôn tai","Ngục tù","Quan tài"],"Đề phòng bệnh tật, tai bay vạ gió, kiện tụng."],
+   ["Tể Tướng",1,["Đại tài","Thi thơ","Hoạnh tài","Hiếu tử","Quý nhân"],"Hanh thông mọi mặt, con cái tấn tới, làm ăn phát đạt."]]},
+ {id:"429",name:"42,9 cm",period:429,use:"Khối xây dựng (dương trạch)",desc:"Chiều cao tầng, bệ, bếp, giường, tủ, bậc cấp, khối đặc",
+  cungs:[["Tài",1,["Tài đức","Bảo khố","Lục hợp","Nghênh phúc"],"Tài lộc, tiền của dồi dào, phúc đức đầy nhà."],
+   ["Bệnh",0,["Thoái tài","Công sự","Lao chấp","Cô quả"],"Ốm đau, hao tài, vướng thị phi."],
+   ["Ly",0,["Trường khố","Kiếp tài","Quan quỷ","Thất thoát"],"Chia lìa, ly tán, mất mát của cải."],
+   ["Nghĩa",1,["Thêm đinh","Ích lợi","Quý tử","Đại cát"],"Nhân nghĩa, thêm con cháu, mọi việc đại cát."],
+   ["Quan",1,["Thuận khoa","Hoạnh tài","Tiến ích","Phú quý"],"Công danh thăng tiến, thi cử thuận lợi, phú quý."],
+   ["Kiếp",0,["Tử biệt","Thoái khẩu","Ly hương","Tài thất"],"Tai kiếp, ly hương, mất mát người và của."],
+   ["Hại",0,["Tai chí","Tử tuyệt","Bệnh lâm","Khẩu thiệt"],"Tai họa, bệnh tật, cãi vã thị phi."],
+   ["Bản",1,["Tài chí","Đăng khoa","Tiến bảo","Hưng vượng"],"Bản mệnh vững, tiền tài đến, gia đạo hưng vượng."]]},
+ {id:"388",name:"38,8 cm",period:388,use:"Âm phần",desc:"Bàn thờ, tủ thờ, mộ phần, đồ thờ cúng",
+  cungs:[["Đinh",1,["Phúc tinh","Đỗ đạt","Tài vượng","Đăng khoa"],"Thêm người, con cái đỗ đạt, tài vượng."],
+   ["Hại",0,["Khẩu thiệt","Lâm bệnh","Tử tuyệt","Tai chí"],"Tai họa, bệnh tật, khẩu thiệt."],
+   ["Vượng",1,["Thiên đức","Hỷ sự","Tiến bảo","Nạp phúc"],"Hưng vượng, nhiều hỷ sự, nạp phúc."],
+   ["Khổ",0,["Thất thoát","Quan quỷ","Kiếp tài","Vô tự"],"Khổ sở, hao tài, hiếm muộn."],
+   ["Nghĩa",1,["Đại cát","Tài vượng","Ích lợi","Thiên khố"],"Đại cát, tài vượng, ích lợi."],
+   ["Quan",1,["Phú quý","Tiến bảo","Hoạnh tài","Thuận khoa"],"Công danh, phú quý, tiền của bất ngờ."],
+   ["Tử",0,["Ly hương","Tử biệt","Thoát đinh","Thất tài"],"Chia lìa, mất người, mất của."],
+   ["Hưng",1,["Đăng khoa","Quý tử","Thêm đinh","Hưng vượng"],"Hưng thịnh, con cháu đỗ đạt."],
+   ["Thất",0,["Cô quả","Lao chấp","Công sự","Thoái tài"],"Thất bại, cô quả, hao tài."],
+   ["Tài",1,["Nghênh phúc","Lục hợp","Tiến bảo","Tài đức"],"Tiền tài, phúc lộc, mọi sự hòa hợp."]]}
+];
+
+const $=id=>document.getElementById(id);
+const fmt=(v,d=0)=>Number(v).toLocaleString("vi-VN",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtL=v=>Number.isInteger(v)?fmt(v):fmt(v,1);
+let L=2130, sel=0, unit="mm";
+try{const s=JSON.parse(localStorage.getItem("pa1-loban")||"{}"); if(s.L>0)L=s.L; if(s.sel>=0&&s.sel<3)sel=s.sel; if(s.unit==="cm")unit="cm";}catch(e){}
+function save(){try{localStorage.setItem("pa1-loban",JSON.stringify({L,sel,unit}))}catch(e){}}
+
+function lookup(R,len){
+  const P=R.period,n=R.cungs.length,c=P/n,r=((len%P)+P)%P;
+  const i=Math.min(n-1,Math.floor(r/c)),subs=R.cungs[i][2],sc=c/subs.length;
+  const j=Math.min(subs.length-1,Math.floor((r-i*c)/sc));
+  return {i,j,good:!!R.cungs[i][1],cung:R.cungs[i][0],sub:subs[j],mean:R.cungs[i][3],r,cycle:Math.floor(len/P)};
+}
+function goodIntervals(R,a,b){
+  const P=R.period,n=R.cungs.length,c=P/n,out=[];
+  for(let k=Math.floor(a/P)-1;k<=Math.floor(b/P)+1;k++) for(let i=0;i<n;i++){
+    if(!R.cungs[i][1])continue;
+    let s=k*P+i*c,e=s+c; s=Math.max(s,a); e=Math.min(e,b); if(e<=s)continue;
+    const last=out[out.length-1],nm=R.cungs[i][0];
+    if(last&&Math.abs(last.e-s)<1e-6){last.e=e; if(!last.names.includes(nm))last.names.push(nm);} else out.push({s,e,names:[nm]});
+  }
+  return out;
+}
+const iS=s=>Math.ceil(s-1e-9), iE=e=>Math.ceil(e-1e-9)-1;
+
+/* Tabs */
+$("tabs").innerHTML=RULERS.map((R,k)=>`<button class="tab" role="tab" data-k="${k}"><b>${R.name}</b><span>${R.use}</span></button>`).join("");
+$("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab"); if(b){sel=+b.dataset.k; render();}});
+
+/* Input + unit */
+const inp=$("len");
+inp.addEventListener("input",()=>{const v=parseFloat(inp.value); if(v>0){L=Math.round((unit==="cm"?v*10:v)*10)/10; render(false);}});
+document.querySelectorAll(".steps .btn").forEach(b=>b.addEventListener("click",()=>setL(L+ +b.dataset.d)));
+document.querySelectorAll(".u").forEach(b=>b.addEventListener("click",()=>{unit=b.dataset.u; render();}));
+function setL(v){L=Math.max(1,Math.round(v*10)/10); render();}
+
+/* Tape: 3 rulers stacked, moving together */
+const cv=$("cv"),box=$("rulerBox"),ctx=cv.getContext("2d");
+let scale=3;
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function draw(){
+  const dpr=window.devicePixelRatio||1,W=box.clientWidth,H=212;
+  cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const span=Math.max(160,Math.min(400,W/2.4)); scale=W/span;
+  const x0=L-span/2,x1=L+span/2,X=v=>(v-x0)*scale;
+  const C={tape:tok("--tape"),tl:tok("--tape-line"),red:tok("--tape-red"),ink:tok("--tape-ink"),nd:tok("--tape-red")};
+  ctx.fillStyle=C.tape; ctx.fillRect(0,0,W,H);
+  // mm scale on top
+  const yT=0,hT=34;
+  const minor=scale>=3?1:(scale>=1.2?5:10), lab=scale*10>=34?10:50;
+  ctx.strokeStyle=C.ink; ctx.fillStyle=C.ink; ctx.font="500 10px 'JetBrains Mono', monospace"; ctx.textAlign="center"; ctx.textBaseline="top";
+  for(let v=Math.ceil(x0/minor)*minor;v<=x1;v+=minor){
+    const x=Math.round(X(v))+.5,h=v%10===0?14:(v%5===0?9:5);
+    ctx.lineWidth=v%10===0?1:.6; ctx.beginPath(); ctx.moveTo(x,yT); ctx.lineTo(x,yT+h); ctx.stroke();
+    if(v%lab===0&&v>=0) ctx.fillText(fmt(v/10),x,yT+16);
+  }
+  ctx.strokeStyle=C.tl; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,hT+.5); ctx.lineTo(W,hT+.5); ctx.stroke();
+  // rows
+  const rowH=(H-hT)/3;
+  RULERS.forEach((R,k)=>{
+    const y=hT+k*rowH,hc=rowH*0.56,P=R.period,n=R.cungs.length,c=P/n;
+    if(k===sel){ctx.fillStyle="rgba(255,255,255,.28)"; ctx.fillRect(0,y,W,rowH);}
+    for(let q=Math.floor(x0/P)-1;q<=Math.floor(x1/P);q++) for(let i=0;i<n;i++){
+      const s=q*P+i*c,e=s+c; if(e<x0||s>x1)continue;
+      const g=R.cungs[i][1],col=g?C.red:C.ink,xs=X(s),w=(e-s)*scale;
+      // cung cell
+      ctx.fillStyle=col; ctx.fillRect(xs+1,y+3,w-2,hc-4);
+      ctx.fillStyle=C.tape; ctx.font="600 13px Oswald, 'Arial Narrow', sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      const nm=R.cungs[i][0].toUpperCase(),tw=ctx.measureText(nm).width;
+      if(tw+8<w){const cx=Math.min(Math.max(xs+w/2,xs+tw/2+6),xs+w-tw/2-6); ctx.fillText(nm,Math.max(tw/2+4,Math.min(W-tw/2-4,cx)),y+1+hc/2);}
+      // subs
+      const subs=R.cungs[i][2],sc=c/subs.length;
+      ctx.font="10.5px Inter, system-ui, sans-serif";
+      subs.forEach((sn,j)=>{const a=s+j*sc,xa=X(a);
+        ctx.strokeStyle=C.tl; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(Math.round(xa)+.5,y+hc); ctx.lineTo(Math.round(xa)+.5,y+rowH-3); ctx.stroke();
+        if(ctx.measureText(sn).width+6<sc*scale){ctx.fillStyle=col; ctx.fillText(sn,xa+sc*scale/2,y+hc+(rowH-hc)/2);} });
+    }
+    ctx.strokeStyle=C.tl; ctx.beginPath(); ctx.moveTo(0,y+rowH-.5); ctx.lineTo(W,y+rowH-.5); ctx.stroke();
+    // row badge
+    ctx.font="500 10px 'JetBrains Mono', monospace"; const lb=R.name.replace(" cm",""),bw=ctx.measureText(lb).width+10;
+    ctx.fillStyle=k===sel?C.red:C.ink; ctx.fillRect(4,y+rowH-17,bw,14); ctx.fillStyle=C.tape; ctx.textAlign="left"; ctx.fillText(lb,9,y+rowH-10);
+  });
+  // needle
+  const xm=Math.round(W/2)+.5; ctx.strokeStyle=C.nd; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(xm,0); ctx.lineTo(xm,H); ctx.stroke();
+  ctx.fillStyle=C.nd; ctx.beginPath(); ctx.moveTo(xm-7,0); ctx.lineTo(xm+7,0); ctx.lineTo(xm,9); ctx.fill();
+}
+let drag=null;
+box.addEventListener("pointerdown",e=>{drag={x:e.clientX,v:L}; box.setPointerCapture(e.pointerId);});
+box.addEventListener("pointermove",e=>{if(!drag)return; const v=Math.round(drag.v-(e.clientX-drag.x)/scale); if(v!==L&&v>=1){L=v; render();}});
+const end=()=>{drag=null;}; box.addEventListener("pointerup",end); box.addEventListener("pointercancel",end);
+box.tabIndex=0; box.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"){setL(L-(e.shiftKey?10:1));e.preventDefault();} if(e.key==="ArrowRight"){setL(L+(e.shiftKey?10:1));e.preventDefault();}});
+
+/* Render */
+function render(syncInput=true){
+  if(syncInput) inp.value=unit==="cm"?Math.round(L)/10:L;
+  inp.step=unit==="cm"?"0.1":"1";
+  document.querySelectorAll(".u").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===unit));
+  $("cmOut").textContent=unit==="cm"?`= ${fmtL(L)} mm`:`= ${fmt(L/10,1)} cm`;
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",+t.dataset.k===sel));
+  const R=RULERS[sel],res=lookup(R,L),n=R.cungs.length;
+  $("rulerInfo").textContent=`Đang chọn thước ${R.name} · chu kỳ ${fmt(R.period)} mm · ${n} cung`;
+  const st=$("stamp"); st.textContent=res.good?"Tốt":"Xấu"; st.className="stamp "+(res.good?"good":"bad");
+  $("vLabel").textContent=`Thước ${R.name} · ${R.use}`;
+  $("vBig").innerHTML=`Cung <span class="${res.good?"good":"bad"}">${res.cung}</span> · ${res.sub}`;
+  $("vMean").textContent=res.mean;
+  $("vSub").textContent=`${fmtL(L)} mm = ${res.cycle} chu kỳ + ${fmt(res.r,1)} mm · cung ${res.i+1}/${n}, cung con ${res.j+1}/${R.cungs[res.i][2].length}. Áp dụng: ${R.desc.toLowerCase()}.`;
+
+  const iv=goodIntervals(R,Math.max(1,L-R.period),L+R.period);
+  const cur=iv.find(v=>L>=v.s&&L<v.e), prev=[...iv].reverse().find(v=>v.e<=L+1e-9&&v!==cur), next=iv.find(v=>v.s>L);
+  const d=L%1?1:0, card=(t,v,lbl,go)=>`<div class="sug"><div><div class="label">${t}</div><div class="v">${v}</div><div class="n">${lbl}</div></div>${go!=null?`<button class="btn" data-go="${go}">Chọn</button>`:""}</div>`;
+  if(cur){
+    $("sugNote").textContent="Kích thước đang nằm trong khoảng tốt. Có thể điều chỉnh trong phạm vi dưới đây mà vẫn giữ cung tốt.";
+    $("sug").innerHTML=card("Khoảng tốt hiện tại",`${fmt(iS(cur.s))} – ${fmt(iE(cur.e))}`,`mm · cung ${cur.names.join(" + ")}`,null)
+      +card("Dư địa",`−${fmt(Math.max(0,L-iS(cur.s)),d)} / +${fmt(Math.max(0,iE(cur.e)-L),d)}`,"mm có thể giảm / tăng",null);
+  }else{
+    $("sugNote").textContent="Kích thước đang rơi vào cung xấu. Hai khoảng tốt gần nhất:";
+    $("sug").innerHTML=(prev?card("Giảm xuống",`${fmt(iS(prev.s))} – ${fmt(iE(prev.e))}`,`mm · cung ${prev.names.join(" + ")} · gần nhất ${fmt(iE(prev.e))} (−${fmt(L-iE(prev.e),d)})`,iE(prev.e)):"")
+      +(next?card("Tăng lên",`${fmt(iS(next.s))} – ${fmt(iE(next.e))}`,`mm · cung ${next.names.join(" + ")} · gần nhất ${fmt(iS(next.s))} (+${fmt(iS(next.s)-L,d)})`,iS(next.s)):"");
+  }
+  $("cards").innerHTML=RULERS.map((Q,k)=>{const r=lookup(Q,L),c=r.good?"good":"bad";
+    return `<article class="card${k===sel?" sel":""}"><div class="card-top"><h3>Thước ${Q.name}</h3><span class="pill ${c}">${r.good?"Tốt":"Xấu"}</span></div>
+    <dl class="kv"><dt>Cung</dt><dd class="${c}">${r.cung}</dd><dt>Cung con</dt><dd>${r.sub}</dd><dt>Vị trí</dt><dd style="font-family:var(--f-mono);font-size:13px">${fmt(r.r,1)} / ${fmt(Q.period)} mm</dd></dl>
+    <p class="meaning" style="font-size:13.5px;margin:0">${r.mean}</p>
+    <p class="use">${Q.use}: ${Q.desc}.</p></article>`;}).join("");
+  renderRange(); draw(); save();
+}
+function renderRange(){
+  const R=RULERS[sel]; let a=parseFloat($("rFrom").value),b=parseFloat($("rTo").value);
+  if(!(a>0&&b>a)){$("rBody").innerHTML=`<tr><td colspan="6" class="empty">Nhập khoảng hợp lệ: "Từ" nhỏ hơn "Đến".</td></tr>`;$("rInfo").textContent="";return;}
+  if(b-a>5000)b=a+5000;
+  const iv=goodIntervals(R,a,b).filter(v=>iE(v.e)>=iS(v.s));
+  const tot=iv.reduce((s,v)=>s+(iE(v.e)-iS(v.s)+1),0);
+  $("rInfo").textContent=`Thước ${R.name} · ${iv.length} khoảng tốt · ${Math.round(tot/(b-a+1)*100)}% phạm vi${b-a>=5000?" · giới hạn 5 000 mm":""}`;
+  $("rBody").innerHTML=iv.length?iv.map(v=>{const s=iS(v.s),e=iE(v.e),m=Math.round((s+e)/2);
+    const others=RULERS.filter(Q=>Q!==R).map(Q=>{const r=lookup(Q,m);return `<span class="dot ${r.good?"good":"bad"}">${Q.name.replace(" cm","")}: ${r.cung}</span>`}).join("");
+    return `<tr><td class="num">${fmt(s)}</td><td class="num">${fmt(e)}</td><td class="num">${fmt(e-s+1)}</td><td>${v.names.join(" + ")}</td><td><span style="font-family:var(--f-mono);font-size:12px;margin-right:8px">${fmt(m)}</span>${others}</td><td><button data-go="${m}">Chọn</button></td></tr>`}).join("")
+    :`<tr><td colspan="6" class="empty">Không có khoảng tốt trong phạm vi này.</td></tr>`;
+}
+/* Đề xuất theo cấu kiện — [tên, chỉ số thước, min thông dụng, max thông dụng, mặc định, tối thiểu QCVN] (mm) */
+const QC="QCVN 06:2022/BXD mục 3.2.9: lối ra thoát nạn cao thông thủy ≥ 1 900 mm, rộng thông thủy ≥ 800 mm.";
+const PRESETS=[
+ {name:"Cửa đi chính",note:"Đo thông thủy (lọt lòng sau khi lắp khung). "+QC,
+  dims:[["Rộng thông thủy",0,1200,2400,1600,800],["Cao thông thủy",0,2200,2800,2450,1900]]},
+ {name:"Cửa phòng",note:"Đo thông thủy. "+QC,
+  dims:[["Rộng thông thủy",0,800,1000,850,800],["Cao thông thủy",0,2000,2300,2150,1900]]},
+ {name:"Cửa WC",note:"Đo thông thủy. Cửa WC không phải lối ra thoát nạn, có thể nhỏ hơn 800 mm.",
+  dims:[["Rộng thông thủy",0,650,850,750],["Cao thông thủy",0,1950,2200,2050]]},
+ {name:"Cửa sổ",note:"Đo lọt lòng ô cửa (khối thông thủy).",
+  dims:[["Rộng lọt lòng",0,500,2400,1200],["Cao lọt lòng",0,600,1800,1300]]},
+ {name:"Tủ quần áo",note:"Đo phủ bì khối tủ (khối đặc, thước 42,9).",
+  dims:[["Rộng phủ bì",1,800,3000,1600],["Cao phủ bì",1,1800,2700,2200],["Sâu phủ bì",1,500,700,600]]},
+ {name:"Giường",note:"Đo phủ bì khung giường. Khung phải lớn hơn nệm (1 600 / 1 800 × 2 000) để nệm lọt.",
+  dims:[["Rộng phủ bì",1,1000,2200,1700],["Dài phủ bì",1,2000,2300,2100],["Cao mặt giường",1,300,600,450]]},
+ {name:"Trang thờ treo",note:"Đo phủ bì trang thờ (thước 38,8). Chiều cao treo đo từ sàn hoàn thiện đến mặt trang thờ; kiểm tra khoảng trống phía trên tới trần cho đồ thờ.",
+  dims:[["Rộng (ngang)",2,400,1200,610],["Sâu",2,300,700,410],["Cao treo (sàn → mặt trang)",2,1500,2300,1900]]},
+ {name:"Bàn thờ đứng",note:"Đo phủ bì bàn thờ (thước 38,8).",
+  dims:[["Rộng (ngang)",2,900,2400,1530],["Sâu",2,500,1000,810],["Cao",2,1000,1400,1270]]}
+];
+let preset=0,tol=3,want={};
+try{const w=JSON.parse(localStorage.getItem("pa1-loban-want")||"{}"); if(w&&typeof w==="object")want=w;}catch(e){}
+const saveWant=()=>{try{localStorage.setItem("pa1-loban-want",JSON.stringify(want))}catch(e){}};
+const getWant=(p,d)=>{const v=want[p+"-"+d]; return v>0?v:PRESETS[p].dims[d][4];};
+
+function okAt(R,v,t){const iv=goodIntervals(R,Math.max(0,v-60),v+60); return iv.some(x=>v-t>=x.s&&v+t<x.e);}
+// Số Lỗ Ban gần nhất: ưu tiên bước 10 mm, rồi 5 mm, rồi 1 mm
+function nearest(R,w,t){
+  const exact=okAt(R,w,t);
+  for(const step of [10,5,1]){
+    let lo=null,hi=null;
+    for(let v=Math.floor(w/step)*step;v>=Math.max(1,w-R.period);v-=step) if(okAt(R,v,t)){lo=v;break;}
+    for(let v=Math.ceil(w/step)*step;v<=w+R.period;v+=step) if(okAt(R,v,t)){hi=v;break;}
+    if(lo!=null||hi!=null){
+      let best=lo==null?hi:hi==null?lo:(w-lo<=hi-w?lo:hi);
+      if(exact) best=w;
+      return {best,lo,hi,exact,step};
+    }
+  }
+  return {best:null,lo:null,hi:null,exact:false};
+}
+const sign=n=>n===0?"±0":(n>0?"+":"−")+fmt(Math.abs(n));
+function dimResult(p,d){
+  const [lb,ri,mn,mx,ty,qc]=PRESETS[p].dims[d],R=RULERS[ri],w=getWant(p,d),r=nearest(R,w,tol);
+  if(r.best==null) return {html:`<div class="warn">Không tìm được số phù hợp, giảm dung sai.</div>`,best:null};
+  const L0=lookup(R,r.best),warns=[];
+  if(qc&&r.best<qc) warns.push(`Nhỏ hơn mức tối thiểu ${fmt(qc)} mm theo QCVN 06:2022/BXD mục 3.2.9.`);
+  if(r.best<mn||r.best>mx) warns.push(`Ngoài phạm vi thông dụng ${fmt(mn)}–${fmt(mx)} mm cho cấu kiện này.`);
+  const alts=[r.lo,r.hi].filter(v=>v!=null&&v!==r.best);
+  const head=r.exact?`Kích thước ${fmt(w)} mm đã đạt cung tốt, dùng đúng số này.`:`${fmt(w)} mm rơi vào cung ${lookup(R,w).cung} (xấu). Số gần nhất nên dùng:`;
+  return {best:r.best,html:`<div class="res">
+    <div class="rd">${head}</div>
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="rv good">${fmt(r.best)}</span><span class="rd">mm · ${sign(r.best-w)} mm so với mong muốn</span></div>
+    <div style="font-size:14px">Cung <b class="good">${L0.cung}</b> · ${L0.sub}<span class="note" style="display:block">${L0.mean}</span></div>
+    ${alts.length?`<div class="alt"><span class="rd">Phương án khác:</span>${alts.map(v=>`<button class="chip" data-go="${v}" data-ruler="${ri}">${fmt(v)} (${sign(v-w)})</button>`).join("")}</div>`:""}
+    ${warns.map(x=>`<div class="warn">${x}</div>`).join("")}
+    <div><button class="btn" data-go="${r.best}" data-ruler="${ri}">Xem trên thước</button></div></div>`};
+}
+function renderAnswer(){
+  const P=PRESETS[preset],vals=P.dims.map((_,d)=>{const [lb,ri]=P.dims[d];const r=nearest(RULERS[ri],getWant(preset,d),tol);return r.best;});
+  const txt=`${P.name}: `+P.dims.map((dm,d)=>`${dm[0].toLowerCase()} ${vals[d]!=null?fmt(vals[d]):"—"} mm`).join(" · ");
+  $("answer").innerHTML=`<div style="min-width:0"><div class="label">Kết quả đề xuất</div><div class="av">${P.name}: ${vals.map(v=>v!=null?fmt(v):"—").join(" × ")} mm</div></div><button class="btn" id="copyAns">Sao chép</button>`;
+  $("copyAns").onclick=()=>{const b=$("copyAns");const done=()=>{b.textContent="Đã sao chép";setTimeout(()=>b.textContent="Sao chép",1500)};
+    try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(e){b.textContent=txt}};
+}
+function renderDim(d){$("res-"+d).innerHTML=dimResult(preset,d).html;}
+function renderPresets(){
+  const P=PRESETS[preset];
+  $("pchips").innerHTML=PRESETS.map((p,k)=>`<button class="pchip" data-p="${k}" aria-pressed="${k===preset}">${p.name}</button>`).join("");
+  $("pnote").textContent=P.note;
+  $("dims").innerHTML=P.dims.map(([lb,ri,mn,mx,ty],d)=>`<div class="dim">
+    <div class="dim-h"><b>${lb}</b><span class="cap" style="letter-spacing:1px">Thước ${RULERS[ri].name} · thông dụng ${fmt(mn)}–${fmt(mx)} mm</span></div>
+    <label class="want"><span class="rd">Anh muốn khoảng</span><input id="w-${preset}-${d}" data-d="${d}" type="number" inputmode="numeric" min="1" step="1" value="${getWant(preset,d)}"><span class="rd">mm</span></label>
+    <div id="res-${d}"></div></div>`).join("");
+  P.dims.forEach((_,d)=>renderDim(d)); renderAnswer();
+}
+$("dims").addEventListener("input",e=>{const i=e.target.closest("input[data-d]"); if(!i)return; const d=+i.dataset.d,v=parseFloat(i.value);
+  if(v>0){want[preset+"-"+d]=Math.round(v); saveWant(); renderDim(d); renderAnswer();}});
+$("pchips").addEventListener("click",e=>{const b=e.target.closest(".pchip"); if(b){preset=+b.dataset.p; renderPresets();}});
+$("tol").addEventListener("input",()=>{const v=parseFloat($("tol").value); if(v>=0&&v<=15){tol=v; renderPresets();}});
+renderPresets();
+
+document.addEventListener("click",e=>{const b=e.target.closest("[data-go]"); if(b){if(b.dataset.ruler!=null)sel=+b.dataset.ruler; setL(+b.dataset.go); window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});}});
+$("rFrom").addEventListener("input",renderRange); $("rTo").addEventListener("input",renderRange);
+window.addEventListener("resize",draw);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
+render();
+</script>
+</body>
+</html>

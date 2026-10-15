@@ -31,12 +31,29 @@
           </div>
           <div class="as-tools">
             <label class="as-check"><input type="checkbox" id="as-notrack"> Không ghi lượt truy cập của máy này</label>
+            <label class="as-check"><input type="checkbox" id="as-auto" checked> Tự cập nhật 10s</label>
+            <span class="as-stamp" id="as-stamp"></span>
             <button type="button" id="as-reload">↻ Tải lại</button>
             <button type="button" id="as-logout">Đăng xuất</button>
           </div>
         </div>
 
+        <div class="as-live" id="as-live"></div>
+
         <div class="as-kpis" id="as-kpis"></div>
+
+        <div class="as-charts">
+          <div class="as-card">
+            <h3>Lượt xem theo khung giờ</h3>
+            <p class="as-insight" id="as-peak"></p>
+            <div class="as-hourwrap" id="as-hours"></div>
+          </div>
+          <div class="as-card">
+            <h3>Trang được quan tâm nhất</h3>
+            <p class="as-insight" id="as-toppage"></p>
+            <div id="as-top"></div>
+          </div>
+        </div>
 
         <h3>Theo trang</h3>
         <div class="as-tw"><table class="as-t" id="as-pages">
@@ -81,6 +98,36 @@
   .as-kpi b { display: block; font-family: var(--font-display); font-size: 1.7rem; color: var(--dark); font-variant-numeric: tabular-nums; }
   .as-kpi span { font-size: .85rem; color: var(--text-light); }
   .as-panel h3 { margin: 0 0 var(--sp-2); }
+  .as-stamp { font-size: .8rem; color: var(--text-light); font-variant-numeric: tabular-nums; min-width: 5.5em; }
+  .as-live { border: 1px solid var(--light-dark); border-left: 4px solid #1f9d55; border-radius: 4px; padding: var(--sp-2); margin-bottom: var(--sp-3); }
+  .as-live-h { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .as-live-h b { font-family: var(--font-display); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .as-dot { width: 10px; height: 10px; border-radius: 50%; background: #1f9d55; box-shadow: 0 0 0 0 rgba(31,157,85,.5); animation: as-pulse 1.8s infinite; }
+  .as-dot.off { background: #bbb; animation: none; }
+  @keyframes as-pulse { 70% { box-shadow: 0 0 0 8px rgba(31,157,85,0); } 100% { box-shadow: 0 0 0 0 rgba(31,157,85,0); } }
+  .as-live ul { margin: var(--sp-1) 0 0; display: grid; gap: 4px; }
+  .as-live li { display: flex; gap: 10px; flex-wrap: wrap; font-size: .9rem; }
+  .as-live li .sub { color: var(--text-light); }
+  .as-charts { display: grid; grid-template-columns: 1.3fr 1fr; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+  .as-card { border: 1px solid var(--light-dark); border-radius: 4px; padding: var(--sp-2) var(--sp-3) var(--sp-3); min-width: 0; }
+  .as-insight { margin: -6px 0 var(--sp-2); font-size: .9rem; color: var(--text-light); }
+  .as-insight b { color: var(--dark); }
+  .as-hourwrap { position: relative; }
+  .as-hourwrap svg { width: 100%; height: auto; display: block; }
+  .as-hourwrap .bar { fill: #3d3d3d; }
+  .as-hourwrap .bar.peak { fill: var(--gold-dark); }
+  .as-hourwrap .hit { fill: transparent; cursor: default; }
+  .as-hourwrap .bar.hov { opacity: .7; }
+  .as-hourwrap text { font-size: 11px; fill: #777; font-family: var(--font-body); }
+  .as-hourwrap .grid { stroke: #ececec; stroke-width: 1; }
+  .as-tip { position: absolute; pointer-events: none; background: var(--dark); color: #fff; font-size: .8rem; padding: 6px 9px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -110%); display: none; }
+  .as-tip b { color: var(--gold); }
+  .as-top-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; margin-bottom: 10px; font-size: .88rem; }
+  .as-top-row .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .as-top-row .val { color: var(--text-light); font-variant-numeric: tabular-nums; text-align: right; }
+  .as-top-row .track { grid-column: 1 / -1; height: 8px; background: var(--light); border-radius: 4px; overflow: hidden; }
+  .as-top-row .fill { height: 100%; background: #3d3d3d; border-radius: 0 4px 4px 0; }
+  .as-top-row:first-child .fill { background: var(--gold-dark); }
   .as-tw { overflow-x: auto; margin-bottom: var(--sp-4); }
   .as-t { width: 100%; border-collapse: collapse; font-size: .92rem; }
   .as-t th { text-align: left; background: var(--dark); color: var(--white); padding: .6em .7em; white-space: nowrap; cursor: pointer; user-select: none; font-weight: 600; }
@@ -98,6 +145,7 @@
   @media (max-width: 760px) {
     .as-panel { padding: var(--sp-2); }
     .as-kpis { grid-template-columns: repeat(2, 1fr); }
+    .as-charts { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -131,11 +179,14 @@
   }
   function close() { $('as-panel').hidden = true; if (location.hash === '#admin') history.replaceState(null, '', location.pathname); }
 
-  async function load(key?: string) {
+  let busy = false;
+  async function load(key?: string, silent = false) {
     const msg = $('as-msg');
     if (!endpoint()) { msg.textContent = 'Chưa cấu hình link Google Apps Script trong /pa1-track.js.'; return; }
+    if (busy) return;
     key = key || ss.get(KEY) || '';
-    msg.style.color = ''; msg.textContent = 'Đang tải…';
+    if (!silent) { msg.style.color = ''; msg.textContent = 'Đang tải…'; $('as-stamp').textContent = 'Đang tải…'; }
+    busy = true;
     try {
       const r = await fetch(endpoint(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ t: 'stats', key, days }) });
       const j = await r.json();
@@ -153,9 +204,16 @@
       $('as-login').hidden = true; $('as-body').hidden = false;
       render();
     } catch (e) {
-      msg.textContent = 'Không kết nối được máy chủ thống kê. Kiểm tra mạng hoặc link Web App.';
-    }
+      if (silent && data) $('as-stamp').textContent = 'Mất kết nối, thử lại…';
+      else msg.textContent = 'Không kết nối được máy chủ thống kê. Kiểm tra mạng hoặc link Web App.';
+    } finally { busy = false; }
   }
+
+  // ---- Tự cập nhật mỗi 10 giây (chỉ khi bảng đang mở và tab đang hiển thị)
+  setInterval(() => {
+    const auto = ($('as-auto') as HTMLInputElement).checked;
+    if (auto && data && !$('as-panel').hidden && !$('as-body').hidden && document.visibilityState === 'visible') load(undefined, true);
+  }, 10000);
 
   function sortRows(id: string, rows: any[]) {
     const { k, asc } = sortState[id];
@@ -168,6 +226,11 @@
     $('as-kpis').innerHTML = [
       [num(t.views), 'Lượt xem trang'], [num(t.users), 'User'], [dur(t.sec), 'Tổng thời gian xem'], [num(t.leads), 'User đã để lại liên hệ']
     ].map(([v, l]) => `<div class="as-kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+
+    renderLive();
+    renderHours();
+    renderTop();
+    $('as-stamp').textContent = 'Lúc ' + new Date(data.generated).toLocaleTimeString('vi-VN');
 
     $('as-pages').querySelector('tbody')!.innerHTML = sortRows('as-pages', data.pages).map((p: any) => `
       <tr><td><a href="${esc(p.path)}" target="_blank">${esc(p.path)}</a><div class="sub">${esc(p.title)}</div></td>
@@ -191,6 +254,68 @@
     }
     $('as-note').textContent = `Cập nhật lúc ${new Date(data.generated).toLocaleString('vi-VN')}. Thời gian xem chỉ tính khi tab đang mở và khách có thao tác trong 5 phút gần nhất. "User" là mã khách ẩn danh theo trình duyệt; có tên/SĐT khi khách gửi form liên hệ.`;
   }
+
+  function who(vid: string) {
+    const u = (data.users || []).find((x: any) => x.vid === vid);
+    return u && u.lead ? `<b>${esc(u.lead.name)}</b> <span class="sub">${esc(vid)}</span>` : `<b>${esc(vid)}</b>`;
+  }
+  function renderLive() {
+    const live = data.live || [];
+    $('as-live').innerHTML = `<div class="as-live-h"><span class="as-dot${live.length ? '' : ' off'}"></span>Đang truy cập: <b>${live.length}</b></div>` +
+      (live.length ? `<ul>${live.map((l: any) => `<li>${who(l.vid)} <span>đang xem <a href="${esc(l.path)}" target="_blank">${esc(l.path)}</a></span><span class="sub">${esc(l.device)} · ${esc(l.browser)} · ${l.ago}s trước</span></li>`).join('')}</ul>`
+                   : '<div class="sub" style="font-size:.88rem;margin-top:4px;color:var(--text-light)">Không có khách nào trong 45 giây qua.</div>');
+  }
+
+  function renderHours() {
+    const h: number[] = data.hours || new Array(24).fill(0), hs: number[] = data.hourSec || new Array(24).fill(0);
+    const total = h.reduce((a, b) => a + b, 0), max = Math.max(1, ...h);
+    const peak = total ? h.indexOf(Math.max(...h)) : -1;
+    // khung 3 giờ đông nhất
+    let best = 0, bi = 0; for (let i = 0; i < 24; i++) { const v = h[i] + h[(i + 1) % 24] + h[(i + 2) % 24]; if (v > best) { best = v; bi = i; } }
+    $('as-peak').innerHTML = total
+      ? `Đông nhất: <b>${peak}h–${peak + 1}h</b> (${num(h[peak])} lượt, ${Math.round(h[peak] / total * 100)}%). Khung 3 giờ cao điểm: <b>${bi}h–${(bi + 3) % 24 || 24}h</b> (${Math.round(best / total * 100)}%).`
+      : 'Chưa có dữ liệu trong khoảng này.';
+    const W = Math.max(280, Math.round($('as-hours').clientWidth || 720)), H = W < 480 ? 170 : 190, L = 30, B = 22, T = 10, cw = (W - L) / 24, bw = Math.max(3, cw - (W < 480 ? 2 : 4)), every = W < 480 ? 6 : 3;
+    const nice = (m: number) => { const st = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000]; for (const x of st) if (m / x <= 4) return x; return Math.ceil(m / 4); };
+    const step = nice(max), top = Math.max(step, Math.ceil(max / step) * step), y = (v: number) => T + (H - T - B) * (1 - v / top);
+    let g = '';
+    for (let v = 0; v <= top; v += step) g += `<line class="grid" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    let bars = '', hits = '';
+    h.forEach((v, i) => {
+      const x = L + i * cw + (cw - bw) / 2, yy = y(v), hh = (H - B) - yy, r = Math.min(4, hh / 2, bw / 2);
+      const path = v ? `M${x},${H - B} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${H - B} Z` : '';
+      hits += `<rect class="hit" data-i="${i}" x="${L + i * cw}" y="${T}" width="${cw}" height="${H - T - B}"/>`;
+      if (path) bars += `<path class="bar${i === peak ? ' peak' : ''}" data-b="${i}" d="${path}"/>`;
+      if (i % every === 0) bars += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle">${i}h</text>`;
+    });
+    $('as-hours').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Lượt xem theo giờ trong ngày">${g}${bars}${hits}</svg><div class="as-tip" id="as-tip"></div>`;
+    const tip = $('as-tip'), wrap = $('as-hours');
+    wrap.querySelectorAll('.hit').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        const i = Number((el as HTMLElement).dataset.i), r = (el as SVGGraphicsElement).getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+        tip.innerHTML = `<b>${i}:00–${i}:59</b><br>${num(h[i])} lượt xem · TB ${dur(h[i] ? hs[i] / h[i] : 0)}/lượt`;
+        tip.style.left = (r.left - wr.left + r.width / 2) + 'px';
+        tip.style.top = Math.max(30, y(h[i]) / H * wr.height) + 'px';
+        tip.style.display = 'block';
+        wrap.querySelector(`[data-b="${i}"]`)?.classList.add('hov');
+      });
+      el.addEventListener('mouseleave', () => { tip.style.display = 'none'; wrap.querySelectorAll('.bar.hov').forEach(b => b.classList.remove('hov')); });
+    });
+  }
+
+  function renderTop() {
+    const pages = (data.pages || []).slice().sort((a: any, b: any) => b.views - a.views).slice(0, 8);
+    const max = Math.max(1, ...pages.map((p: any) => p.views));
+    const longest = (data.pages || []).filter((p: any) => p.views).sort((a: any, b: any) => b.sec / b.views - a.sec / a.views)[0];
+    $('as-toppage').innerHTML = pages.length
+      ? `Nhiều lượt nhất: <b>${esc(pages[0].path)}</b>` + (longest ? ` · Xem lâu nhất: <b>${esc(longest.path)}</b> (TB ${dur(longest.sec / longest.views)})` : '')
+      : 'Chưa có dữ liệu trong khoảng này.';
+    $('as-top').innerHTML = pages.map((p: any) => `
+      <div class="as-top-row" title="${esc(p.title)}"><span class="lbl">${esc(p.path)}</span><span class="val">${num(p.views)} lượt · ${dur(p.sec)}</span>
+      <div class="track"><div class="fill" style="width:${Math.max(2, p.views / max * 100)}%"></div></div></div>`).join('');
+  }
+
+  let rz: any; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (data && !$('as-body').hidden) renderHours(); }, 150); });
 
   // ---- sự kiện
   $('as-lock').addEventListener('click', open);

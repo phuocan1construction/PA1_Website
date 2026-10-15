@@ -58,6 +58,11 @@
     if (pending >= 120) flush();            // gửi định kỳ mỗi 2 phút xem
   }, TICK * 1000);
 
+  // ---- Tín hiệu "đang truy cập" mỗi 20 giây khi tab đang mở
+  setInterval(function () {
+    if (document.visibilityState === 'visible' && Date.now() - lastAct < IDLE * 1000) send({ t: 'ping', device: device, browser: browser });
+  }, 20000);
+
   function flush() {
     if (pending <= 0) return;
     var s = pending; pending = 0;

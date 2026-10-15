@@ -44,6 +44,9 @@ function doPost(e) {
   if (d.t === 'stats') return stats_(d);
   if (!/^V-[A-Z0-9]{6}$/.test(d.vid || '') || !/^\//.test(d.path || '')) return json_({ ok: false });
 
+  if (d.t === 'ping' || d.t === 'view') live_(d);
+  if (d.t === 'ping') return json_({ ok: true });
+
   const now = new Date();
   const lock = LockService.getScriptLock();
   lock.tryLock(5000);
@@ -61,6 +64,29 @@ function doPost(e) {
     }
   } finally { lock.releaseLock(); }
   return json_({ ok: true });
+}
+
+/* ---------- Khách đang truy cập (lưu tạm trong Cache, không ghi Sheet) ---------- */
+const LIVE_SEC = 45;   // coi là "đang truy cập" nếu có tín hiệu trong 45 giây gần nhất
+function live_(d) {
+  const cache = CacheService.getScriptCache();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(3000)) return;
+  try {
+    const now = Date.now();
+    const map = JSON.parse(cache.get('live') || '{}');
+    Object.keys(map).forEach(k => { if (now - map[k].ts > LIVE_SEC * 1000) delete map[k]; });
+    const prev = map[d.vid] || {};
+    map[d.vid] = { path: clip(d.path, 150), ts: now, device: clip(d.device || prev.device || '', 10), browser: clip(d.browser || prev.browser || '', 15) };
+    cache.put('live', JSON.stringify(map), 600);
+  } finally { lock.releaseLock(); }
+}
+function liveList_() {
+  const now = Date.now();
+  const map = JSON.parse(CacheService.getScriptCache().get('live') || '{}');
+  return Object.keys(map).filter(k => now - map[k].ts <= LIVE_SEC * 1000)
+    .map(k => ({ vid: k, path: map[k].path, device: map[k].device, browser: map[k].browser, ago: Math.round((now - map[k].ts) / 1000) }))
+    .sort((a, b) => a.ago - b.ago);
 }
 
 /* ---------- Báo cáo cho admin (chỉ trả dữ liệu khi đúng mật khẩu) ---------- */
@@ -88,9 +114,10 @@ function stats_(d) {
   const leadRows = leadSh.getLastRow() > 1 ? leadSh.getRange(2, 1, leadSh.getLastRow() - 1, LEAD_HEAD.length).getValues() : [];
 
   const leads = {};
+  const live = liveList_();
   leadRows.forEach(r => { leads[r[1]] = { name: r[2], phone: String(r[3]).replace(/^'/, ''), email: r[4], service: r[5], at: +new Date(r[0]) }; });
 
-  const pages = {}, users = {}, daily = {};
+  const pages = {}, users = {}, daily = {}, hours = new Array(24).fill(0), hourSec = new Array(24).fill(0);
   let views = 0, sec = 0;
   rows.forEach(r => {
     const ts = +new Date(r[0]);
@@ -106,8 +133,10 @@ function stats_(d) {
       views++;
       const day = Utilities.formatDate(new Date(ts), TZ, 'yyyy-MM-dd');
       daily[day] = (daily[day] || 0) + 1;
+      hours[Number(Utilities.formatDate(new Date(ts), TZ, 'H'))]++;
     } else {
       p.sec += s; u.sec += s; sec += s;
+      hourSec[Number(Utilities.formatDate(new Date(ts), TZ, 'H'))] += s;
     }
   });
 
@@ -124,6 +153,6 @@ function stats_(d) {
   return json_({
     ok: true, generated: Date.now(),
     totals: { views, sec, users: userList.length, leads: userList.filter(u => u.lead).length },
-    pages: pageList, users: userList.slice(0, 500), daily
+    pages: pageList, users: userList.slice(0, 500), daily, hours, hourSec, live
   });
 }

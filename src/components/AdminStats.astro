@@ -40,6 +40,19 @@
 
         <div class="as-live" id="as-live"></div>
 
+        <div class="as-charts as-time">
+          <div class="as-card">
+            <h3>30 phút gần nhất</h3>
+            <p class="as-insight" id="as-min-note"></p>
+            <div class="as-hourwrap" id="as-min"></div>
+          </div>
+          <div class="as-card">
+            <h3 id="as-trend-h">Lượt truy cập theo thời gian</h3>
+            <p class="as-insight" id="as-trend-note"></p>
+            <div class="as-hourwrap" id="as-trend"></div>
+          </div>
+        </div>
+
         <div class="as-kpis" id="as-kpis"></div>
 
         <div class="as-charts">
@@ -122,6 +135,12 @@
   .as-hourwrap .grid { stroke: #ececec; stroke-width: 1; }
   .as-tip { position: absolute; pointer-events: none; background: var(--dark); color: #fff; font-size: .8rem; padding: 6px 9px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -110%); display: none; }
   .as-tip b { color: var(--gold); }
+  .as-time { grid-template-columns: 1fr 1.6fr; }
+  .as-hourwrap .line { fill: none; stroke: #3d3d3d; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .as-hourwrap .area { fill: rgba(217,160,32,.14); }
+  .as-hourwrap .pt { fill: #3d3d3d; stroke: #fff; stroke-width: 2; }
+  .as-hourwrap .pt.last { fill: var(--gold-dark); }
+  .as-hourwrap .cross { stroke: #bbb; stroke-width: 1; stroke-dasharray: 3 3; }
   .as-top-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; margin-bottom: 10px; font-size: .88rem; }
   .as-top-row .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .as-top-row .val { color: var(--text-light); font-variant-numeric: tabular-nums; text-align: right; }
@@ -228,6 +247,8 @@
     ].map(([v, l]) => `<div class="as-kpi"><b>${v}</b><span>${l}</span></div>`).join('');
 
     renderLive();
+    renderMinutes();
+    renderTrend();
     renderHours();
     renderTop();
     $('as-stamp').textContent = 'Lúc ' + new Date(data.generated).toLocaleTimeString('vi-VN');
@@ -303,6 +324,91 @@
     });
   }
 
+  // ---- khung trục dùng chung
+  function axes(W: number, H: number, L: number, T: number, B: number, max: number) {
+    const nice = (m: number) => { for (const x of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000]) if (m / x <= 4) return x; return Math.ceil(m / 4); };
+    const step = nice(Math.max(1, max)), top = Math.max(step, Math.ceil(max / step) * step);
+    const y = (v: number) => T + (H - T - B) * (1 - v / top);
+    let g = '';
+    for (let v = 0; v <= top; v += step) g += `<line class="grid" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    return { y, g };
+  }
+  function tipAt(wrap: HTMLElement, tip: HTMLElement, xPx: number, yPx: number, html: string) {
+    tip.innerHTML = html; tip.style.display = 'block';
+    const wr = wrap.clientWidth, half = tip.offsetWidth / 2;
+    tip.style.left = Math.min(wr - half, Math.max(half, xPx)) + 'px'; tip.style.top = Math.max(34, yPx) + 'px';
+  }
+
+  // ---- 30 phút gần nhất: cột theo từng phút
+  function renderMinutes() {
+    const m: number[] = data.minutes || new Array(30).fill(0), wrap = $('as-min');
+    const total = m.reduce((a, b) => a + b, 0), last5 = m.slice(-5).reduce((a, b) => a + b, 0);
+    $('as-min-note').innerHTML = `<b>${num(total)}</b> lượt xem trong 30 phút · <b>${num(last5)}</b> trong 5 phút gần nhất`;
+    const W = Math.max(260, Math.round(wrap.clientWidth || 360)), H = 170, L = 26, B = 22, T = 10, cw = (W - L) / 30, bw = Math.max(2, cw - 2);
+    const { y, g } = axes(W, H, L, T, B, Math.max(...m));
+    let bars = '', hits = '';
+    m.forEach((v, i) => {
+      const x = L + i * cw + (cw - bw) / 2, yy = y(v), hh = (H - B) - yy, r = Math.min(3, hh / 2, bw / 2);
+      if (v) bars += `<path class="bar${i === 29 ? ' peak' : ''}" data-b="${i}" d="M${x},${H - B} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${H - B} Z"/>`;
+      hits += `<rect class="hit" data-i="${i}" x="${L + i * cw}" y="${T}" width="${cw}" height="${H - T - B}"/>`;
+    });
+    const lab = [[0, '-30p'], [15, '-15p'], [29, 'bây giờ']].map(([i, t]) => `<text x="${L + (i as number) * cw + cw / 2}" y="${H - 6}" text-anchor="${i === 29 ? 'end' : 'middle'}">${t}</text>`).join('');
+    wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Lượt xem 30 phút gần nhất">${g}${bars}${lab}${hits}</svg><div class="as-tip"></div>`;
+    const tip = wrap.querySelector('.as-tip') as HTMLElement, base = data.nowMs || data.generated;
+    wrap.querySelectorAll('.hit').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        const i = Number((el as HTMLElement).dataset.i), t = new Date(base - (29 - i) * 60000);
+        const r = (el as SVGGraphicsElement).getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+        tipAt(wrap, tip, r.left - wr.left + r.width / 2, y(m[i]) / H * wr.height, `<b>${t.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</b><br>${num(m[i])} lượt xem`);
+        wrap.querySelector(`[data-b="${i}"]`)?.classList.add('hov');
+      });
+      el.addEventListener('mouseleave', () => { tip.style.display = 'none'; wrap.querySelectorAll('.bar.hov').forEach(b => b.classList.remove('hov')); });
+    });
+  }
+
+  // ---- Xu hướng: đường theo giờ (Hôm nay) hoặc theo ngày
+  function renderTrend() {
+    const wrap = $('as-trend');
+    let labels: string[] = [], vals: number[] = [], tips: string[] = [];
+    if (data.days === 1) {
+      const nowH = new Date(data.nowMs || data.generated).getHours();
+      const h: number[] = (data.todayH || []).slice(0, nowH + 1);
+      h.forEach((v, i) => { labels.push(i + 'h'); vals.push(v); tips.push(`${i}:00–${i}:59`); });
+      $('as-trend-h').textContent = 'Hôm nay theo giờ';
+    } else {
+      const keys = Object.keys(data.daily || {}).sort();
+      const end = new Date(data.today + 'T00:00:00+07:00').getTime();
+      const n = data.days > 0 ? data.days : Math.max(1, keys.length ? Math.round((end - new Date(keys[0] + 'T00:00:00+07:00').getTime()) / 86400000) + 1 : 1);
+      for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(end - i * 86400000 + 7 * 3600000), k = d.toISOString().slice(0, 10);
+        labels.push(k.slice(8, 10) + '/' + k.slice(5, 7)); vals.push(data.daily[k] || 0);
+        tips.push(['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d.getUTCDay()] + ', ' + k.slice(8, 10) + '/' + k.slice(5, 7) + '/' + k.slice(0, 4));
+      }
+      $('as-trend-h').textContent = 'Lượt truy cập theo ngày';
+    }
+    const total = vals.reduce((a, b) => a + b, 0), mx = Math.max(0, ...vals), mi = vals.indexOf(mx);
+    $('as-trend-note').innerHTML = total ? `Tổng <b>${num(total)}</b> lượt · cao nhất <b>${tips[mi]}</b> (${num(mx)} lượt)` : 'Chưa có dữ liệu trong khoảng này.';
+    const W = Math.max(280, Math.round(wrap.clientWidth || 560)), H = 170, L = 30, B = 22, T = 12, R = 10;
+    const { y, g } = axes(W, H, L, T, B, mx);
+    const n = vals.length, x = (i: number) => n === 1 ? (L + W - R) / 2 : L + (W - L - R) * i / (n - 1);
+    const pts = vals.map((v, i) => [x(i), y(v)]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const area = n ? `${line} L${x(n - 1)},${H - B} L${x(0)},${H - B} Z` : '';
+    const every = Math.max(1, Math.ceil(n / Math.max(3, Math.floor((W - L) / 56))));
+    let lab = '';
+    labels.forEach((t, i) => { if ((i % every === 0 && (n - 1 - i >= every * 0.75 || i === 0)) || i === n - 1) lab += `<text x="${x(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${t}</text>`; });
+    const dots = n <= 14 ? pts.map((p, i) => `<circle class="pt${i === n - 1 ? ' last' : ''}" cx="${p[0]}" cy="${p[1]}" r="${i === n - 1 ? 4.5 : 3}"/>`).join('') : `<circle class="pt last" cx="${pts[n - 1][0]}" cy="${pts[n - 1][1]}" r="4.5"/>`;
+    wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Lượt truy cập theo thời gian">${g}<path class="area" d="${area}"/><path class="line" d="${line}"/>${dots}${lab}<line class="cross" id="as-cross" y1="${T}" y2="${H - B}" style="display:none"/><rect class="hit" x="${L}" y="${T}" width="${W - L}" height="${H - T - B}"/></svg><div class="as-tip"></div>`;
+    const tip = wrap.querySelector('.as-tip') as HTMLElement, svg = wrap.querySelector('svg')!, cross = wrap.querySelector('#as-cross') as SVGLineElement, hit = wrap.querySelector('.hit')!;
+    hit.addEventListener('mousemove', (e: any) => {
+      const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * W;
+      const i = Math.max(0, Math.min(n - 1, Math.round(n === 1 ? 0 : (sx - L) / (W - L - R) * (n - 1))));
+      cross.setAttribute('x1', String(x(i))); cross.setAttribute('x2', String(x(i))); cross.style.display = '';
+      tipAt(wrap, tip, x(i) / W * r.width, y(vals[i]) / H * r.height, `<b>${tips[i]}</b><br>${num(vals[i])} lượt xem`);
+    });
+    hit.addEventListener('mouseleave', () => { tip.style.display = 'none'; cross.style.display = 'none'; });
+  }
+
   function renderTop() {
     const pages = (data.pages || []).slice().sort((a: any, b: any) => b.views - a.views).slice(0, 8);
     const max = Math.max(1, ...pages.map((p: any) => p.views));
@@ -315,7 +421,7 @@
       <div class="track"><div class="fill" style="width:${Math.max(2, p.views / max * 100)}%"></div></div></div>`).join('');
   }
 
-  let rz: any; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (data && !$('as-body').hidden) renderHours(); }, 150); });
+  let rz: any; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (data && !$('as-body').hidden) { renderMinutes(); renderTrend(); renderHours(); } }, 150); });
 
   // ---- sự kiện
   $('as-lock').addEventListener('click', open);

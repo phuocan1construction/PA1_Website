@@ -117,10 +117,16 @@ function stats_(d) {
   const live = liveList_();
   leadRows.forEach(r => { leads[r[1]] = { name: r[2], phone: String(r[3]).replace(/^'/, ''), email: r[4], service: r[5], at: +new Date(r[0]) }; });
 
+  const nowMs = Date.now(), minutes = new Array(30).fill(0), todayH = new Array(24).fill(0);
+  const todayStr = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
   const pages = {}, users = {}, daily = {}, hours = new Array(24).fill(0), hourSec = new Array(24).fill(0);
   let views = 0, sec = 0;
   rows.forEach(r => {
     const ts = +new Date(r[0]);
+    if (r[4] === 'view') {
+      const ago = Math.floor((nowMs - ts) / 60000);
+      if (ago >= 0 && ago < 30) minutes[29 - ago]++;
+    }
     if (ts < from) return;
     const vid = r[1], type = r[4], path = r[5], s = Number(r[7]) || 0;
     const p = pages[path] || (pages[path] = { path, title: '', views: 0, sec: 0, u: {} });
@@ -133,6 +139,7 @@ function stats_(d) {
       views++;
       const day = Utilities.formatDate(new Date(ts), TZ, 'yyyy-MM-dd');
       daily[day] = (daily[day] || 0) + 1;
+      if (day === todayStr) todayH[Number(Utilities.formatDate(new Date(ts), TZ, 'H'))]++;
       hours[Number(Utilities.formatDate(new Date(ts), TZ, 'H'))]++;
     } else {
       p.sec += s; u.sec += s; sec += s;
@@ -153,6 +160,6 @@ function stats_(d) {
   return json_({
     ok: true, generated: Date.now(),
     totals: { views, sec, users: userList.length, leads: userList.filter(u => u.lead).length },
-    pages: pageList, users: userList.slice(0, 500), daily, hours, hourSec, live
+    pages: pageList, users: userList.slice(0, 500), daily, hours, hourSec, live, minutes, todayH, nowMs, days, today: todayStr
   });
 }

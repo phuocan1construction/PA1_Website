@@ -51,7 +51,7 @@ import AdminStats from '../components/AdminStats.astro';
         </div>
         <div>
           <h3 style="margin-bottom: var(--sp-3);">Gửi yêu cầu</h3>
-          <form action="https://formsubmit.co/Phuocan1construction@gmail.com" method="POST">
+          <form id="lien-he-form" action="https://formsubmit.co/Phuocan1construction@gmail.com" method="POST" style="scroll-margin-top:90px">
             <input type="hidden" name="_subject" value="[PA1] Yêu cầu tư vấn từ website">
             <input type="hidden" name="_captcha" value="false">
             <input type="hidden" name="_next" value="https://phuocan1construction.com/cam-on/">
@@ -91,6 +91,18 @@ import AdminStats from '../components/AdminStats.astro';
       </div>
     </div>
   </section>
+
+  <script is:inline>
+    (function () {
+      try {
+        var q = new URLSearchParams(location.search);
+        var dv = q.get('dv'), mota = q.get('mota');
+        var sel = document.getElementById('c-service'), msg = document.getElementById('c-message');
+        if (dv && sel) { for (var i = 0; i < sel.options.length; i++) if (sel.options[i].text === dv) sel.selectedIndex = i; }
+        if (mota && msg && !msg.value) msg.value = mota;
+      } catch (e) {}
+    })();
+  </script>
 
   <AdminStats />
 

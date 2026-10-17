@@ -3,6 +3,8 @@
    Dán toàn bộ file này vào một dự án Apps Script (script.google.com). Dữ liệu ghi vào Sheet theo SHEET_ID.
    1) Đổi ADMIN_PASSWORD bên dưới.
    2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone.
+   CẬP NHẬT (khái toán gửi email): dán đè file này → Deploy → Manage deployments → ✏ Edit
+      → Version: New version → Deploy (giữ nguyên link /exec). Lần đầu Google sẽ hỏi quyền "Gửi email" → Allow.
    ========================================================= */
 
 const ADMIN_PASSWORD = 'DOI_MAT_KHAU_O_DAY';   // ← ĐỔI MẬT KHẨU ADMIN (ít nhất 8 ký tự)
@@ -42,6 +44,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false }); }
   if (d.t === 'stats') return stats_(d);
+  if (d.t === 'khaitoan') return khaiToan_(d);
   if (!/^V-[A-Z0-9]{6}$/.test(d.vid || '') || !/^\//.test(d.path || '')) return json_({ ok: false });
 
   if (d.t === 'ping' || d.t === 'view') live_(d);
@@ -162,4 +165,127 @@ function stats_(d) {
     totals: { views, sec, users: userList.length, leads: userList.filter(u => u.lead).length },
     pages: pageList, users: userList.slice(0, 500), daily, hours, hourSec, live, minutes, todayH, nowMs, days, today: todayStr
   });
+}
+
+/* ---------- Khái toán: gửi phiếu PDF A4 cho khách + lưu thông tin khách ---------- */
+const KT_SHEET = 'KhaiToan';
+const KT_HEAD = ['Thời gian', 'Mã phiếu', 'Mã khách', 'Họ tên', 'SĐT', 'Email', 'Lô đất', 'Quy mô', 'Tổng m² quy đổi', 'Gói', 'Mức / loại', 'Chi phí dự kiến', 'Đường vào', 'Gửi mail'];
+const KT_NOTIFY = 'Phuocan1construction@gmail.com';   // email PA1 nhận bản sao mỗi khái toán ('' để tắt)
+const KT_DAILY_MAX = 40;                              // tối đa phiếu gửi / 6 giờ (hạn mức Gmail ~100 email/ngày)
+
+function khaiToan_(d) {
+  const email = clip(d.email, 80).trim();
+  if (!/^[^\s@<>"']+@[^\s@<>"']+\.[a-z]{2,}$/i.test(email)) return json_({ ok: false, error: 'email' });
+  const name = clip(d.name, 80).trim();
+  if (!name) return json_({ ok: false, error: 'name' });
+  const phone = clip(d.phone, 20).replace(/[^\d+ .]/g, '');
+  const cache = CacheService.getScriptCache();
+  const kAll = 'kt_all', kOne = 'kt_' + email.toLowerCase();
+  const nAll = Number(cache.get(kAll) || 0), nOne = Number(cache.get(kOne) || 0);
+  if (nAll >= KT_DAILY_MAX || nOne >= 3 || MailApp.getRemainingDailyQuota() < (KT_NOTIFY ? 2 : 1)) return json_({ ok: false, error: 'limit' });
+  cache.put(kAll, String(nAll + 1), 21600); cache.put(kOne, String(nOne + 1), 21600);
+
+  const data = ktData_(d.data || {});
+  const now = new Date();
+  const id = 'KT-' + Utilities.formatDate(now, TZ, 'yyMMdd') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  const who = { name: name, phone: phone, email: email };
+  const html = pa1Report(data, who, { id: id, date: Utilities.formatDate(now, TZ, 'dd/MM/yyyy HH:mm') });
+  let status = 'Đã gửi';
+  try {
+    const pdf = Utilities.newBlob(html, 'text/html', id + '.html').getAs('application/pdf').setName('Khai-toan-PA1-' + id + '.pdf');
+    const opt = { to: email, name: 'PA1 Construction', subject: '[PA1] Khái toán diện tích & chi phí xây dựng – ' + id, htmlBody: ktMail_(name, data, id), attachments: [pdf] };
+    if (KT_NOTIFY) opt.replyTo = KT_NOTIFY;
+    MailApp.sendEmail(opt);
+    if (KT_NOTIFY) MailApp.sendEmail({
+      to: KT_NOTIFY, name: 'Website PA1', replyTo: email,
+      subject: '[Khách khái toán] ' + name + ' · ' + data.total + ' m² · ' + data.range,
+      htmlBody: 'Khách: <b>' + ktEsc_(name) + '</b><br>SĐT: ' + ktEsc_(phone || '—') + '<br>Email: ' + ktEsc_(email) + '<br>Quy mô: ' + ktEsc_(data.scale) + '<br>Gói: ' + ktEsc_(data.goi + ' · ' + data.pkg) + '<br>Dự kiến: <b>' + ktEsc_(data.range) + '</b>',
+      attachments: [pdf]
+    });
+  } catch (err) { status = 'Lỗi: ' + clip(err, 80); }
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(5000);
+  try {
+    sheet_(KT_SHEET, KT_HEAD).appendRow([now, id, clip(d.vid, 10), safe(name, 80), safe(phone, 20), safe(email, 80), safe(data.lot, 60), safe(data.scale, 60),
+      data.total, safe(data.goi, 20), safe(data.pkg, 40), safe(data.range, 40), safe(data.duong, 60), status]);
+    sheet_(LEAD_SHEET, LEAD_HEAD).appendRow([now, clip(d.vid, 10), safe(name, 80), safe(phone, 20), safe(email, 80), safe('Khái toán ' + id, 40), '/khai-toan']);
+  } finally { lock.releaseLock(); }
+  return json_(status === 'Đã gửi' ? { ok: true, id: id } : { ok: false, error: 'mail', id: id });
+}
+
+function ktEsc_(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// Chỉ nhận đúng các trường cần thiết, giới hạn độ dài; tổng m² tính lại ở máy chủ
+function ktData_(x) {
+  const s = (v, n) => clip(v, n);
+  const num = (v, max) => { v = Number(v); return isFinite(v) && v > 0 ? Math.min(v, max) : 0; };
+  const rows = (Array.isArray(x.rows) ? x.rows : []).slice(0, 60)
+    .map(r => ({ g: s(r.g, 30), label: s(r.label, 80), a: num(r.a, 100000), k: num(r.k, 300) }))
+    .filter(r => r.a > 0);
+  const total = Math.round(rows.reduce((t, r) => t + r.a * r.k / 100, 0) * 10) / 10;
+  return {
+    lot: s(x.lot, 60), scale: s(x.scale, 60), mong: s(x.mong, 40), logioi: s(x.logioi, 40), duong: s(x.duong, 60), hem: s(x.hem, 30), mua: s(x.mua, 40),
+    rows: rows, total: total, goi: s(x.goi, 20), pkg: s(x.pkg, 40), price: s(x.price, 40), range: s(x.range, 40), xayTho: !!x.xayTho
+  };
+}
+
+function ktMail_(name, d, id) {
+  return '<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6">' +
+    '<p>Chào anh/chị <b>' + ktEsc_(name) + '</b>,</p>' +
+    '<p>PA1 Construction gửi anh/chị phiếu khái toán <b>' + ktEsc_(id) + '</b> (file PDF đính kèm):</p>' +
+    '<table style="border-collapse:collapse;font-size:14px">' +
+    '<tr><td style="padding:4px 12px 4px 0;color:#666">Tổng diện tích quy đổi</td><td><b>' + ktEsc_(String(d.total).replace('.', ',')) + ' m²</b></td></tr>' +
+    '<tr><td style="padding:4px 12px 4px 0;color:#666">Gói thi công</td><td>' + ktEsc_(d.goi + ' · ' + d.pkg) + '</td></tr>' +
+    '<tr><td style="padding:4px 12px 4px 0;color:#666">Chi phí dự kiến</td><td><b>' + ktEsc_(d.range) + '</b></td></tr></table>' +
+    '<p>Đây là số liệu tham khảo. PA1 khảo sát hiện trạng miễn phí để báo giá chi tiết — anh/chị chỉ cần trả lời email này hoặc gọi <b>0523.023.023</b>.</p>' +
+    '<p>Trân trọng,<br><b>PA1 Construction</b> · Dự án chất, PA1 lo tất<br>phuocan1construction.com</p></div>';
+}
+
+/* Mẫu phiếu PDF A4 — giống hệt hàm trong src/pages/khai-toan.astro */
+function pa1Report(d, who, meta) {
+  function e(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function f(n, k) { k = k == null ? 1 : k; var p = Math.pow(10, k), x = (Math.round(Number(n || 0) * p) / p).toFixed(k).split('.'); x[0] = x[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return x.join(','); }
+  var rows = '', last = '';
+  (d.rows || []).forEach(function (r) {
+    if (r.g !== last) { rows += '<tr class="g"><td colspan="4">' + e(r.g) + '</td></tr>'; last = r.g; }
+    rows += '<tr><td>' + e(r.label) + '</td><td class="n">' + f(r.a) + '</td><td class="n">' + e(r.k) + '%</td><td class="n">' + f(r.a * r.k / 100) + '</td></tr>';
+  });
+  function kv(list) { var h = ''; for (var i = 0; i < list.length; i += 2) { h += '<tr>' + [list[i], list[i + 1]].map(function (x) { return x ? '<td class="l">' + e(x[0]) + '</td><td>' + e(x[1] || '—') + '</td>' : '<td></td><td></td>'; }).join('') + '</tr>'; } return '<table class="kv">' + h + '</table>'; }
+  var css = '@page{size:A4;margin:11mm 13mm 11mm}' +
+    'body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:9.5pt;margin:0;line-height:1.35}' +
+    '.hd{width:100%;border-collapse:collapse;border-bottom:3px solid #F2B529}.hd td{padding:0 0 8px;vertical-align:bottom}' +
+    '.brand{font-size:16pt;font-weight:bold;letter-spacing:.5px}.slogan{color:#8a6a10;font-style:italic;font-size:9.5pt}' +
+    '.ct{text-align:right;font-size:8.5pt;color:#555;line-height:1.5}' +
+    'h1{font-size:14pt;text-align:center;margin:10px 0 2px;letter-spacing:.5px}.sub{text-align:center;color:#666;font-size:9pt;margin:0 0 10px}' +
+    'h2{font-size:10pt;background:#1a1a1a;color:#fff;padding:4px 8px;margin:10px 0 4px}' +
+    'table{width:100%;border-collapse:collapse}.kv td{padding:3px 6px;border-bottom:1px solid #e5e0d4;vertical-align:top}.kv td.l{width:17%;color:#666;white-space:nowrap}' +
+    '.t th{background:#f4ead3;text-align:left;font-size:8.5pt;padding:4px 6px;border-bottom:1px solid #d9c9a0}.t th.n{text-align:right}' +
+    '.t td{padding:2.5px 6px;border-bottom:1px solid #eee}.t .n{text-align:right;white-space:nowrap}' +
+    '.t tr.g td{font-weight:bold;color:#8a6a10;background:#fbf7ec;font-size:8pt;text-transform:uppercase;letter-spacing:.5px}' +
+    '.t tr.tot td{font-weight:bold;font-size:11.5pt;border-top:2px solid #1a1a1a;border-bottom:0;padding-top:6px}' +
+    '.big{border:2px solid #F2B529;background:#fffaf0;padding:8px;text-align:center;margin-top:8px}.big .k{font-size:9pt;color:#666;text-transform:uppercase;letter-spacing:1px}.big .v{font-size:20pt;font-weight:bold;margin-top:2px}' +
+    '.note{font-size:8pt;color:#555;margin-top:8px}.note ul{margin:4px 0 0 16px;padding:0}' +
+    '.ft{margin-top:10px;border-top:1px solid #ccc;padding-top:6px;font-size:8pt;color:#777;text-align:center}';
+  return '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Khái toán ' + e(meta.id) + '</title><style>' + css + '</style></head><body>' +
+    '<table class="hd"><tr><td><div class="brand">PHƯỚC AN 1 CONSTRUCTION</div><div class="slogan">Dự án chất, PA1 lo tất</div></td>' +
+    '<td class="ct">Hotline: 0523.023.023<br>Phuocan1construction@gmail.com<br>phuocan1construction.com</td></tr></table>' +
+    '<h1>PHIẾU KHÁI TOÁN DIỆN TÍCH &amp; CHI PHÍ XÂY DỰNG</h1>' +
+    '<p class="sub">Mã phiếu: <b>' + e(meta.id) + '</b> &nbsp;·&nbsp; Ngày lập: ' + e(meta.date) + '</p>' +
+    '<h2>1. Khách hàng &amp; công trình</h2>' +
+    kv([['Khách hàng', who.name], ['Điện thoại', who.phone], ['Email', who.email], ['Lô đất', d.lot], ['Quy mô', d.scale], ['Móng', d.mong], ['Lộ giới trước nhà', d.logioi], ['Đường vào', d.duong], ['Dự kiến khởi công', d.mua]]) +
+    '<h2>2. Diện tích xây dựng quy đổi</h2>' +
+    '<table class="t"><thead><tr><th>Hạng mục</th><th class="n">Diện tích (m²)</th><th class="n">Hệ số</th><th class="n">Quy đổi (m²)</th></tr></thead><tbody>' + rows +
+    '<tr class="tot"><td colspan="3">TỔNG DIỆN TÍCH QUY ĐỔI</td><td class="n">' + f(d.total) + '</td></tr></tbody></table>' +
+    '<h2>3. Chi phí dự kiến</h2>' +
+    kv([['Gói thi công', d.goi + ' · ' + d.pkg], ['Đơn giá', d.price], ['Phát sinh đường vào', d.hem], ['Diện tích tính giá', f(d.total) + ' m²']]) +
+    '<div class="big"><div class="k">Chi phí dự kiến</div><div class="v">' + e(d.range) + '</div></div>' +
+    '<div class="note"><b>Ghi chú</b><ul>' +
+    '<li>Khái toán mang tính tham khảo, theo bảng giá PA1 hiện hành và số liệu khách hàng tự nhập.</li>' +
+    (d.xayTho ? '<li>Gói Xây thô chưa gồm vật tư hoàn thiện (gạch ốp lát, sơn, thiết bị vệ sinh, cửa…).</li>' : '') +
+    '<li>Chưa gồm chi phí thiết kế, xin phép xây dựng, điện nước kéo từ ngoài vào, nội thất rời.</li>' +
+    '<li>Phát sinh đường vào áp dụng cho hẻm nhỏ do vận chuyển vật tư thủ công, thi công bằng máy nhỏ.</li>' +
+    '<li>PA1 khảo sát hiện trạng miễn phí để báo giá chi tiết và chính xác.</li></ul></div>' +
+    '<div class="ft">PA1 Construction · Đại diện: Nguyễn Hữu Phước · 243/15A Bình Thung, Đông Hòa, TP. Hồ Chí Minh</div>' +
+    '</body></html>';
 }

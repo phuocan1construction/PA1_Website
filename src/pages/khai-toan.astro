@@ -726,21 +726,23 @@ function pa1Report(d, who, meta) {
     rows += '<tr><td>' + e(r.label) + '</td><td class="n">' + f(r.a) + '</td><td class="n">' + e(r.k) + '%</td><td class="n">' + f(r.a * r.k / 100) + '</td></tr>';
   });
   function kv(list) { var h = ''; for (var i = 0; i < list.length; i += 2) { h += '<tr>' + [list[i], list[i + 1]].map(function (x) { return x ? '<td class="l">' + e(x[0]) + '</td><td>' + e(x[1] || '—') + '</td>' : '<td></td><td></td>'; }).join('') + '</tr>'; } return '<table class="kv">' + h + '</table>'; }
-  var css = '@page{size:A4;margin:11mm 13mm 11mm}' +
-    'body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:9.5pt;margin:0;line-height:1.35}' +
+  var css = '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:11mm 13mm 11mm}' +
+    'body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:9pt;margin:0;line-height:1.3}' +
     '.hd{width:100%;border-collapse:collapse;border-bottom:3px solid #F2B529}.hd td{padding:0 0 8px;vertical-align:bottom}' +
     '.brand{font-size:16pt;font-weight:bold;letter-spacing:.5px}.slogan{color:#8a6a10;font-style:italic;font-size:9.5pt}' +
     '.ct{text-align:right;font-size:8.5pt;color:#555;line-height:1.5}' +
-    'h1{font-size:14pt;text-align:center;margin:10px 0 2px;letter-spacing:.5px}.sub{text-align:center;color:#666;font-size:9pt;margin:0 0 10px}' +
-    'h2{font-size:10pt;background:#1a1a1a;color:#fff;padding:4px 8px;margin:10px 0 4px}' +
-    'table{width:100%;border-collapse:collapse}.kv td{padding:3px 6px;border-bottom:1px solid #e5e0d4;vertical-align:top}.kv td.l{width:17%;color:#666;white-space:nowrap}' +
+    'h1{font-size:14pt;text-align:center;margin:8px 0 2px;letter-spacing:.5px}.sub{text-align:center;color:#666;font-size:9pt;margin:0 0 10px}' +
+    'h2{font-size:9.5pt;background:#1a1a1a;color:#fff;padding:3px 8px;margin:8px 0 3px}' +
+    'table{width:100%;border-collapse:collapse}.kv td{padding:2px 6px;border-bottom:1px solid #e5e0d4;vertical-align:top}.kv td.l{width:17%;color:#666;white-space:nowrap}' +
     '.t th{background:#f4ead3;text-align:left;font-size:8.5pt;padding:4px 6px;border-bottom:1px solid #d9c9a0}.t th.n{text-align:right}' +
-    '.t td{padding:2.5px 6px;border-bottom:1px solid #eee}.t .n{text-align:right;white-space:nowrap}' +
+    '.t td{padding:2px 6px;border-bottom:1px solid #eee}.t .n{text-align:right;white-space:nowrap}' +
     '.t tr.g td{font-weight:bold;color:#8a6a10;background:#fbf7ec;font-size:8pt;text-transform:uppercase;letter-spacing:.5px}' +
     '.t tr.tot td{font-weight:bold;font-size:11.5pt;border-top:2px solid #1a1a1a;border-bottom:0;padding-top:6px}' +
-    '.big{border:2px solid #F2B529;background:#fffaf0;padding:8px;text-align:center;margin-top:8px}.big .k{font-size:9pt;color:#666;text-transform:uppercase;letter-spacing:1px}.big .v{font-size:20pt;font-weight:bold;margin-top:2px}' +
+    '.big{border:2px solid #F2B529;background:#fffaf0;padding:5px;text-align:center;margin-top:8px}.big .k{font-size:9pt;color:#666;text-transform:uppercase;letter-spacing:1px}.big .v{font-size:18pt;font-weight:bold;margin-top:2px}' +
     '.note{font-size:8pt;color:#555;margin-top:8px}.note ul{margin:4px 0 0 16px;padding:0}' +
-    '.ft{margin-top:10px;border-top:1px solid #ccc;padding-top:6px;font-size:8pt;color:#777;text-align:center}';
+    '.call{text-align:center;font-size:10pt;margin-top:6px}.call b{font-size:12pt}' +
+    '.ft{width:100%;border-collapse:collapse;margin-top:10px;background:#1a1a1a;color:#e8e8e8;font-size:8pt;line-height:1.5}.ft td{padding:7px 10px;vertical-align:top}' +
+    '.ft b{color:#F2B529}.ft .r{text-align:right}';
   return '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Khái toán ' + e(meta.id) + '</title><style>' + css + '</style></head><body>' +
     '<table class="hd"><tr><td><div class="brand">PHƯỚC AN 1 CONSTRUCTION</div><div class="slogan">Dự án chất, PA1 lo tất</div></td>' +
     '<td class="ct">Hotline: 0523.023.023<br>Phuocan1construction@gmail.com<br>phuocan1construction.com</td></tr></table>' +
@@ -754,13 +756,15 @@ function pa1Report(d, who, meta) {
     '<h2>3. Chi phí dự kiến</h2>' +
     kv([['Gói thi công', d.goi + ' · ' + d.pkg], ['Đơn giá', d.price], ['Phát sinh đường vào', d.hem], ['Diện tích tính giá', f(d.total) + ' m²']]) +
     '<div class="big"><div class="k">Chi phí dự kiến</div><div class="v">' + e(d.range) + '</div></div>' +
+    '<p class="call">Khảo sát &amp; báo giá chi tiết miễn phí — gọi <b>0523.023.023</b></p>' +
     '<div class="note"><b>Ghi chú</b><ul>' +
     '<li>Khái toán mang tính tham khảo, theo bảng giá PA1 hiện hành và số liệu khách hàng tự nhập.</li>' +
     (d.xayTho ? '<li>Gói Xây thô chưa gồm vật tư hoàn thiện (gạch ốp lát, sơn, thiết bị vệ sinh, cửa…).</li>' : '') +
     '<li>Chưa gồm chi phí thiết kế, xin phép xây dựng, điện nước kéo từ ngoài vào, nội thất rời.</li>' +
-    '<li>Phát sinh đường vào áp dụng cho hẻm nhỏ do vận chuyển vật tư thủ công, thi công bằng máy nhỏ.</li>' +
-    '<li>PA1 khảo sát hiện trạng miễn phí để báo giá chi tiết và chính xác.</li></ul></div>' +
-    '<div class="ft">PA1 Construction · Đại diện: Nguyễn Hữu Phước · 243/15A Bình Thung, Đông Hòa, TP. Hồ Chí Minh</div>' +
+    '</ul></div>' +
+    '<table class="ft"><tr><td><b>PA1 CONSTRUCTION</b><br>Người đại diện: Nguyễn Hữu Phước<br>W: Thứ 2 – Thứ 7, 8h00 – 17h00</td>' +
+    '<td>T: <b>0523.023.023</b><br>E: Phuocan1construction@gmail.com<br>phuocan1construction.com</td>' +
+    '<td>A1: 243/15A Bình Thung, Đông Hòa, TP. Hồ Chí Minh<br>A2: Phước Hậu, Vĩnh Long (Tươi: 0354.020.916)</td></tr></table>' +
     '</body></html>';
 }
 

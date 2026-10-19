@@ -570,6 +570,8 @@ svg{display:block;max-width:100%}
       Mmax: (x1, x2) => ext('M', 1, x1, x2), Mmin: (x1, x2) => ext('M', -1, x1, x2),
       fmax: (x1, x2) => ext('f', 1, x1, x2), fmin: (x1, x2) => ext('f', -1, x1, x2),
       Mm: (id, x) => { const k = model.members.findIndex(m => m.id === id); return at(mem[k].stations, x, 'M'); },
+      St: (id, x, key, side) => { const k = model.members.findIndex(m => m.id === id); return key === 'f' ? -at(mem[k].stations, x, 'v', side) : at(mem[k].stations, x, key, side); },
+      Sext: (id, key, sg) => { const k = model.members.findIndex(m => m.id === id); return mem[k].stations.reduce((b, p) => (sg * (key === 'f' ? -p.v : p[key]) > sg * b ? (key === 'f' ? -p.v : p[key]) : b), -sg * Infinity); },
       Mend: (id, end) => { const r = mem.find(m => m.id === id); return end === 'i' ? r.Mi : r.Mj; },
       res, model, beamMode
     };
@@ -853,11 +855,128 @@ svg{display:block;max-width:100%}
     build: v => portal(v, 'K4'), it: kit('q*h^2/24*((39+19*mu)*k-12*mu*L1-12)', 'q*h^2/24*((9+5*mu)*k-12*mu*L1)', 'q*h^2*mu/24*(12*L1-k)', 'q*h^2*mu/24*(12*L1+k)') });
 
   // ---------- Tính một sơ đồ ----------
+  // ===== Dầm nghiêng: gối cố định A (dưới), gối di động B (trên, liên kết thanh đứng) =====
+  const G7 = 'Dầm nghiêng (cầu thang, xà mái)';
+  function incl(v, loads) { // loads: [{t:'U', w (kN/m theo chiều dài thanh)}, {t:'P', x (hình chiếu ngang, gốc tại A; âm = console trái), P}]
+    const m = { materials: MAT, sections: [{ id: 'S', shape: 'CUSTOM', A: 1e4, I: v.EJ / 1e6 }], loadCases: [{ id: 'L' }], nodalLoads: [], memberLoads: [], combos: [] };
+    const tg = v.h / v.L, a = +v.a || 0, b = +v.b || 0, pt = (id, X) => ({ id, x: X, z: X * tg });
+    m.nodes = [...(a > 0 ? [pt('C', -a)] : []), pt('A', 0), pt('B', v.L), ...(b > 0 ? [pt('D', v.L + b)] : [])];
+    m.supports = [{ node: 'A', ux: 1, uz: 1, ry: 0 }, { node: 'B', ux: 0, uz: 1, ry: 0 }];
+    m.members = []; const rng = [];
+    for (let k = 0; k + 1 < m.nodes.length; k++) { const n1 = m.nodes[k], n2 = m.nodes[k + 1]; m.members.push({ id: n1.id + n2.id, i: n1.id, j: n2.id, mat: 'M', sec: 'S', nseg: n1.id === 'A' ? 60 : 30 }); rng.push([n1.x, n2.x]); }
+    loads.forEach(l => {
+      if (l.t === 'U') m.members.forEach(mb => m.memberLoads.push({ lc: 'L', member: mb.id, type: 'U', dir: 'GZ', w1: l.w, a: 0, b: 1 }));
+      else { const k = rng.findIndex(([x0, x1]) => l.x >= x0 - 1e-9 && l.x <= x1 + 1e-9); const [x0, x1] = rng[k]; m.memberLoads.push({ lc: 'L', member: m.members[k].id, type: 'P', dir: 'GZ', w1: l.P, a: (l.x - x0) / (x1 - x0) }); }
+    });
+    m.frame = true; m.incl = true; return m;
+  }
+  const NP = [['L', 'Hình chiếu ngang L', 'm', 4], ['h', 'Chiều cao h', 'm', 2]];
+  const ND = [['S', 'sqrt(L^2+h^2)', 'm'], ['cosa', 'L/S', ''], ['sina', 'h/S', '']];
+  const NN = 'A: gối cố định; B: gối di động (liên kết thanh đứng – chỉ cho phản lực đứng) → H_A = 0. Tọa độ s đo dọc thanh từ A; Q ⊥ trục thanh, N dọc trục (+ kéo); f⊥ = độ võng vuông góc trục thanh, thành phần đứng = f⊥·cosα. Bỏ qua biến dạng dọc trục.';
+  const nEnd = (W, WB) => [it('N_A', '-(' + W + ')*sina', 'kN', h => h.St('AB', 0, 'N')), it('Q_A', '(' + W + ')*cosa', 'kN', h => h.St('AB', 0, 'V')),
+    it('N_B', '(' + WB + ')*sina', 'kN', h => h.St('AB', Math.hypot(h.model.nodes[1].x, h.model.nodes[1].z), 'N')), it('Q_B', '-(' + WB + ')*cosa', 'kN', h => h.St('AB', Math.hypot(h.model.nodes[1].x, h.model.nodes[1].z), 'V'))];
+  add({ id: 'N1', g: G7, stiff: 'incl', n: 'Tải phân bố đều q (phương trọng lực)', src: 'Cơ học kết cấu – dầm tĩnh định nghiêng', note: NN,
+    P: [...NP, ['q', 'Tải phân bố q', 'kN/m', 10], ['qm', 'q tính theo', '', 'proj', [['proj', 'm hình chiếu ngang (hoạt tải, lớp hoàn thiện)'], ['len', 'm chiều dài thanh (trọng lượng bản thân)']]]], d: ND,
+    build: v => incl(v, [{ t: 'U', w: v.qm === 'proj' ? v.q * v.L / Math.hypot(v.L, v.h) : v.q }]),
+    it: v => { const W = v.qm === 'proj' ? 'q*L/2' : 'q*S/2';
+      return [it('V_A = V_B', W, 'kN', h => h.R('A')), it('H_A', '0', 'kN', h => h.Rx('A')), ...nEnd(W, W),
+        it('M_max (giữa thanh)', v.qm === 'proj' ? 'q*L^2/8' : 'q*S*L/8', 'kNm', h => h.Sext('AB', 'M', 1)),
+        it('f⊥max (giữa thanh)', v.qm === 'proj' ? '5*q*L^2*S^2/(384*EJ)' : '5*q*cosa*S^4/(384*EJ)', 'mm', h => h.Sext('AB', 'f', 1)),
+        it('f đứng = f⊥·cosα', v.qm === 'proj' ? '5*q*L^2*S^2/(384*EJ)*cosa' : '5*q*cosa^2*S^4/(384*EJ)', 'mm', h => h.Sext('AB', 'f', 1) * h.model.nodes[1].x / Math.hypot(h.model.nodes[1].x, h.model.nodes[1].z))]; } });
+  add({ id: 'N2', g: G7, stiff: 'incl', n: 'Tải tập trung: n lực P chia đều trên thanh', src: 'Cơ học kết cấu – dầm tĩnh định nghiêng', note: NN + ' n lực đặt tại x_i = i·L/(n+1) (chia thanh thành n + 1 đoạn bằng nhau).',
+    P: [...NP, ['P', 'Lực tập trung P (mỗi lực)', 'kN', 10], ['n', 'Số lực n', '', 3, [1, 2, 3, 4, 5, 6, 7, 8, 9]]], d: [...ND, ['e', 'L/(n+1)', 'm']],
+    build: v => incl(v, Array.from({ length: +v.n }, (_, i) => ({ t: 'P', x: (i + 1) * v.L / (+v.n + 1), P: v.P }))),
+    it: v => { const odd = +v.n % 2 === 1;
+      return [it('V_A = V_B', 'n*P/2', 'kN', h => h.R('A')), it('H_A', '0', 'kN', h => h.Rx('A')), ...nEnd('n*P/2', 'n*P/2'),
+        it(odd ? 'M_max (n lẻ, lực giữa)' : 'M_max (n chẵn)', odd ? 'P*L*(n+1)/8' : 'P*L*n*(n+2)/(8*(n+1))', 'kNm', h => h.Sext('AB', 'M', 1)),
+        it(odd ? 'f⊥max (n lẻ)' : 'f⊥max (n chẵn)', odd ? 'P*cosa*S^3/(384*EJ)*(5*n^2+10*n+1)/(n+1)' : 'P*cosa*S^3/(384*EJ)*n*(n+2)*(5*n^2+10*n+6)/(n+1)^3', 'mm', h => h.Sext('AB', 'f', 1))]; } });
+  add({ id: 'N3', g: G7, stiff: 'incl', n: 'Tải tập trung: 1 lực P cách đầu A một khoảng x', src: 'Cơ học kết cấu – dầm tĩnh định nghiêng', note: NN + ' x đo theo hình chiếu ngang từ A; sa = x/cosα, sb = (L − x)/cosα là khoảng cách dọc thanh.',
+    P: [...NP, ['P', 'Lực tập trung P', 'kN', 20], ['x', 'Khoảng cách x (hình chiếu ngang từ A)', 'm', 1.5]], d: [...ND, ['sa', 'x/cosa', 'm'], ['sb', '(L-x)/cosa', 'm']],
+    chk: v => v.x > 0 && v.x < v.L ? '' : 'Cần 0 < x < L',
+    build: v => incl(v, [{ t: 'P', x: v.x, P: v.P }]),
+    it: v => [it('V_A', 'P*(L-x)/L', 'kN', h => h.R('A')), it('V_B', 'P*x/L', 'kN', h => h.R('B')), it('H_A', '0', 'kN', h => h.Rx('A')), ...nEnd('P*(L-x)/L', 'P*x/L'),
+      it('M_max (dưới P)', 'P*x*(L-x)/L', 'kNm', h => h.Sext('AB', 'M', 1)),
+      it('f⊥max', 'P*cosa*sb/(3*EJ*S)*sqrt(((sa^2+2*sa*sb)/3)^3)', 'mm', h => h.Sext('AB', 'f', 1), { cond: v.x >= v.L - v.x }),
+      it('f⊥max', 'P*cosa*sa/(3*EJ*S)*sqrt(((sb^2+2*sa*sb)/3)^3)', 'mm', h => h.Sext('AB', 'f', 1), { cond: v.x < v.L - v.x })] });
+
+  // ===== Dầm nghiêng có console hai đầu =====
+  const G8 = 'Dầm nghiêng có console hai đầu';
+  const NPc = [['L', 'Hình chiếu ngang nhịp L (A → B)', 'm', 4], ['h', 'Chênh cao h (A → B)', 'm', 2], ['a', 'Console trái a (hình chiếu ngang)', 'm', 1], ['b', 'Console phải b (hình chiếu ngang)', 'm', 0.8]];
+  const NNc = 'A: gối cố định; B: gối di động (liên kết thanh đứng) → H_A = 0. Console trái CA dài a, console phải BD dài b (hình chiếu ngang), cùng độ dốc tanα = h/L. Mô-men chỉ phụ thuộc khoảng cách ngang; Q = V·cosα ⊥ trục, N = −V·sinα dọc trục (+ kéo); s đo dọc thanh từ đầu trái. Bỏ qua biến dạng dọc trục.';
+  const sTot = v => Math.hypot(v.L, v.h) * ((+v.a || 0) + v.L + (+v.b || 0)) / v.L;
+  const fEnds = v => [...(v.a > 0 ? [it('f⊥ đầu console trái C', null, 'mm', h => h.St('CA', 0, 'f'), { note: 'lời giải số (âm = vồng lên)' })] : []), ...(v.b > 0 ? [it('f⊥ đầu console phải D', null, 'mm', h => h.St('BD', v.b * Math.hypot(v.L, v.h) / v.L, 'f'), { note: 'lời giải số (âm = vồng lên)' })] : []),
+    it('f⊥ cực trị nhịp AB', null, 'mm', h => { const mx = h.Sext('AB', 'f', 1), mn = h.Sext('AB', 'f', -1); return Math.abs(mx) >= Math.abs(mn) ? mx : mn; }, { note: 'lời giải số (âm = vồng lên)' })];
+  const chkAB = v => v.L > 0 && v.a >= 0 && v.b >= 0 ? '' : 'Cần L > 0, a ≥ 0, b ≥ 0';
+  add({ id: 'N4', g: G8, stiff: 'incl', n: 'Tải phân bố đều q (phương trọng lực)', src: 'Cơ học kết cấu – dầm tĩnh định nghiêng có console', note: NNc + ' g = cường độ quy về 1 m hình chiếu ngang.',
+    P: [...NPc, ['q', 'Tải phân bố q', 'kN/m', 10], ['qm', 'q tính theo', '', 'proj', [['proj', 'm hình chiếu ngang (hoạt tải, lớp hoàn thiện)'], ['len', 'm chiều dài thanh (trọng lượng bản thân)']]]],
+    d: v => [...ND, ['g', v.qm === 'proj' ? 'q' : 'q/cosa', 'kN/m']], chk: chkAB,
+    build: v => incl(v, [{ t: 'U', w: v.qm === 'proj' ? v.q * v.L / Math.hypot(v.L, v.h) : v.q }]),
+    it: v => { const VA = 'g*((L+a)^2-b^2)/(2*L)', x0 = '(' + VA + ')/g-a';
+      const x0v = (((v.L + v.a) ** 2 - v.b ** 2) / (2 * v.L)) - v.a, inn = x0v > 0 && x0v < v.L;
+      return [it('V_A', VA, 'kN', h => h.R('A')), it('V_B', 'g*((L+b)^2-a^2)/(2*L)', 'kN', h => h.R('B')), it('H_A', '0', 'kN', h => h.Rx('A')),
+        ...(v.a > 0 ? [it('M_A', '-g*a^2/2', 'kNm', h => h.St('AB', 0, 'M'))] : []), ...(v.b > 0 ? [it('M_B', '-g*b^2/2', 'kNm', h => h.St('BD', 0, 'M'))] : []),
+        ...(inn ? [it('x₀ (M_max nhịp, ngang từ A)', x0, 'm', h => { const st = h.res.members[h.model.members.findIndex(m => m.id === 'AB')].stations; let b = st[0]; st.forEach(p => { if (p.M > b.M) b = p; }); return b.x * v.L / Math.hypot(v.L, v.h); }, { tol: 0.02 }),
+          it('M_max (nhịp)', '(' + VA + ')^2/(2*g)-(' + VA + ')*a', 'kNm', h => h.Sext('AB', 'M', 1))] : [it('M_max (nhịp)', null, 'kNm', h => h.Sext('AB', 'M', 1), { note: 'lời giải số' })]),
+        it('N tại A (phải)', '-(' + VA + '-g*a)*sina', 'kN', h => h.St('AB', 0, 'N', 'R')), it('Q tại A (phải)', '(' + VA + '-g*a)*cosa', 'kN', h => h.St('AB', 0, 'V', 'R')),
+        ...fEnds(v)]; } });
+  add({ id: 'N5', g: G8, stiff: 'incl', n: 'Tải tập trung: n lực P chia đều trên thanh', src: 'Cơ học kết cấu – dầm tĩnh định nghiêng có console', note: NNc + ' n lực chia đều toàn bộ hình chiếu Lt = a + L + b: X_i = i·Lt/(n+1) tính từ đầu trái C.',
+    P: [...NPc, ['P', 'Lực tập trung P (mỗi lực)', 'kN', 10], ['n', 'Số lực n', '', 5, [1, 2, 3, 4, 5, 6, 7, 8, 9]]], d: [...ND, ['Lt', 'a+L+b', 'm'], ['e', 'Lt/(n+1)', 'm']], chk: chkAB,
+    build: v => { const Lt = v.a + v.L + v.b, n = +v.n; return incl(v, Array.from({ length: n }, (_, i) => ({ t: 'P', x: (i + 1) * Lt / (n + 1) - v.a, P: v.P }))); },
+    it: v => { const e = (v.a + v.L + v.b) / (+v.n + 1); let kA = 0, kB = 0; for (let i = 1; i <= +v.n; i++) { if (i * e < v.a - 1e-9) kA++; if (i * e > v.a + v.L + 1e-9) kB++; } v.kA = kA; v.kB = kB;
+      return [it('V_A', 'n*P*(L+a-b)/(2*L)', 'kN', h => h.R('A')), it('V_B', 'n*P*(L+b-a)/(2*L)', 'kN', h => h.R('B')), it('H_A', '0', 'kN', h => h.Rx('A')),
+        ...(v.a > 0 ? [it(`M_A (k_A = ${kA} lực trên console trái)`, '-P*(kA*a-e*kA*(kA+1)/2)', 'kNm', h => h.St('AB', 0, 'M'))] : []),
+        ...(v.b > 0 ? [it(`M_B (k_B = ${kB} lực trên console phải)`, '-P*(kB*b-e*kB*(kB+1)/2)', 'kNm', h => h.St('BD', 0, 'M'))] : []),
+        it('M_max (nhịp)', null, 'kNm', h => h.Sext('AB', 'M', 1), { note: 'lời giải số' }), ...fEnds(v)]; } });
+  add({ id: 'N6', g: G8, stiff: 'incl', n: 'Tải tập trung: 1 lực P cách gối A một khoảng x', src: 'Cơ học kết cấu – dầm tĩnh định nghiêng có console', note: NNc + ' x đo theo hình chiếu ngang từ gối A: −a ≤ x < 0 lực trên console trái, 0 ≤ x ≤ L trong nhịp, L < x ≤ L + b trên console phải.',
+    P: [...NPc, ['P', 'Lực tập trung P', 'kN', 20], ['x', 'Khoảng cách x (hình chiếu ngang từ gối A)', 'm', 1.5]], d: ND,
+    chk: v => chkAB(v) || (v.x >= -v.a - 1e-9 && v.x <= v.L + v.b + 1e-9 ? '' : 'Cần −a ≤ x ≤ L + b'),
+    build: v => incl(v, [{ t: 'P', x: v.x, P: v.P }]),
+    it: v => [it('V_A', 'P*(L-x)/L', 'kN', h => h.R('A')), it('V_B', 'P*x/L', 'kN', h => h.R('B')), it('H_A', '0', 'kN', h => h.Rx('A')),
+      ...(v.x < 0 ? [it('M_A (lực trên console trái)', 'P*x', 'kNm', h => h.St('AB', 0, 'M'))] : v.x > v.L ? [it('M_B (lực trên console phải)', '-P*(x-L)', 'kNm', h => h.St('BD', 0, 'M'))]
+        : [it('M dưới P', 'P*x*(L-x)/L', 'kNm', h => h.Sext('AB', 'M', 1))]), ...fEnds(v)] });
+  // ===== Khung cổng chân ngàm, cột lệch cao (dầm nghiêng) =====
+  const G9 = 'Khung cổng chân ngàm, cột lệch cao';
+  function portal2(v, load) {
+    const m = { materials: MAT, sections: [{ id: 'C', shape: 'CUSTOM', A: 1e4, I: v.EJ1 / 1e6 }, { id: 'D', shape: 'CUSTOM', A: 1e4, I: v.EJ2 / 1e6 }], loadCases: [{ id: 'L' }], nodalLoads: [], memberLoads: [], combos: [] };
+    m.nodes = [{ id: 'a', x: 0, z: 0 }, { id: 'c', x: 0, z: v.h1 }, { id: 'd', x: v.l, z: v.h2 }, { id: 'b', x: v.l, z: 0 }];
+    m.supports = [{ node: 'a', ux: 1, uz: 1, ry: 1 }, { node: 'b', ux: 1, uz: 1, ry: 1 }];
+    m.members = [{ id: 'Cột trái', i: 'a', j: 'c', mat: 'M', sec: 'C', nseg: 60 }, { id: 'Dầm', i: 'c', j: 'd', mat: 'M', sec: 'D', nseg: 60 }, { id: 'Cột phải', i: 'b', j: 'd', mat: 'M', sec: 'C', nseg: 60 }];
+    const Sd = Math.hypot(v.l, v.h2 - v.h1);
+    if (load === 'K5') m.memberLoads.push({ lc: 'L', member: 'Dầm', type: 'U', dir: 'GZ', w1: v.qm === 'len' ? v.q : v.q * v.l / Sd, a: 0, b: 1 });
+    if (load === 'K6') m.nodalLoads.push({ lc: 'L', node: 'c', Fx: v.P });
+    if (load === 'K7') m.memberLoads.push({ lc: 'L', member: 'Dầm', type: 'P', dir: 'GZ', w1: v.P, a: v.u });
+    if (load === 'K8') m.memberLoads.push({ lc: 'L', member: 'Cột trái', type: 'U', dir: 'GX', w1: v.q, a: 0, b: 1 });
+    m.frame = true; m.portal2 = true;
+    return m;
+  }
+  const KP2 = [['l', 'Nhịp khung L', 'm', 5], ['h1', 'Chiều cao cột trái h₁', 'm', 3.5], ['h2', 'Chiều cao cột phải h₂', 'm', 5]];
+  const KD2 = [['Sd', 'sqrt(l^2+(h2-h1)^2)', 'm']];
+  const KN2 = 'Khung siêu tĩnh bậc 3, hai chân ngàm, dầm nghiêng nối đỉnh cột c (h₁) và d (h₂) – giải bằng phần tử hữu hạn (Frame2D), bỏ qua biến dạng dọc trục. Kiểm tra bằng điều kiện cân bằng ΣX, ΣZ, ΣM. Với h₁ = h₂ trùng sơ đồ IX. Phản lực dương: V hướng lên, H theo +X (sang phải), M_gối ngược chiều kim đồng hồ.';
+  const nodeR = (h, id, k) => h.res.nodes.find(n => n.id === id)[k];
+  const kRes = (extra) => [it('V_a', null, 'kN', h => nodeR(h, 'a', 'Rz')), it('V_b', null, 'kN', h => nodeR(h, 'b', 'Rz')), it('H_a', null, 'kN', h => nodeR(h, 'a', 'Rx')), it('H_b', null, 'kN', h => nodeR(h, 'b', 'Rx')),
+    it('M_a (phản lực)', null, 'kNm', h => nodeR(h, 'a', 'Ry')), it('M_b (phản lực)', null, 'kNm', h => nodeR(h, 'b', 'Ry')),
+    it('M_c (đầu dầm trái)', null, 'kNm', h => h.Mend('Dầm', 'i')), it('M_d (đầu dầm phải)', null, 'kNm', h => h.Mend('Dầm', 'j')), ...extra,
+    it('U_x đỉnh c', null, 'mm', h => nodeR(h, 'c', 'ux')), it('U_x đỉnh d', null, 'mm', h => nodeR(h, 'd', 'ux'))];
+  const kAdd = (id, n, P, load, eq, extra) => add({ id, g: G9, late: true, n, src: 'Phần tử hữu hạn (Frame2D) + kiểm tra cân bằng', stiff: 'frame', P: [...KP2, ...P], d: KD2, note: KN2,
+    chk: v => v.l > 0 && v.h1 > 0 && v.h2 > 0 ? '' : 'Cần L, h₁, h₂ > 0', build: v => portal2(v, load), it: v => [...eq(v), ...kRes(extra(v))] });
+  // ΣZ, ΣX, ΣM quanh a (M dương ngược chiều kim đồng hồ; tải đứng dương hướng xuống)
+  const sumZ = (e) => it('ΣZ: V_a + V_b', e, 'kN', h => nodeR(h, 'a', 'Rz') + nodeR(h, 'b', 'Rz'));
+  const sumX = (e) => it('ΣX: H_a + H_b', e, 'kN', h => nodeR(h, 'a', 'Rx') + nodeR(h, 'b', 'Rx'));
+  const sumM = (e) => it('ΣM quanh a: M_a + M_b + V_b·L', e, 'kNm', h => nodeR(h, 'a', 'Ry') + nodeR(h, 'b', 'Ry') + nodeR(h, 'b', 'Rz') * h.model.nodes.find(n => n.id === 'b').x);
+  kAdd('K5', 'Tải đều q trên dầm', [['q', 'Tải q', 'kN/m', 20], ['qm', 'q tính theo', '', 'proj', [['proj', 'm hình chiếu ngang'], ['len', 'm chiều dài dầm nghiêng']]]], 'K5',
+    v => { const W = v.qm === 'len' ? 'q*Sd' : 'q*l'; return [sumZ(W), sumX('0'), sumM(W + '*l/2')]; },
+    v => [it('M_max (dầm)', null, 'kNm', h => h.Sext('Dầm', 'M', 1)), it('f⊥max (dầm)', null, 'mm', h => h.Sext('Dầm', 'f', 1))]);
+  kAdd('K6', 'Lực ngang P tại đỉnh cột trái', [['P', 'Lực P', 'kN', 30]], 'K6',
+    v => [sumZ('0'), sumX('-P'), sumM('P*h1')], v => []);
+  kAdd('K7', 'Lực đứng P trên dầm tại u·L', [['P', 'Lực P', 'kN', 50], ['u', 'Tỉ số u (vị trí lực = u·L, hình chiếu ngang)', '', 0.3]], 'K7',
+    v => [sumZ('P'), sumX('0'), sumM('P*u*l')], v => [it('M dưới P', null, 'kNm', h => h.St('Dầm', v.u * Math.hypot(v.l, v.h2 - v.h1), 'M')), it('f⊥max (dầm)', null, 'mm', h => h.Sext('Dầm', 'f', 1))]);
+  kAdd('K8', 'Tải ngang q phân bố trên cột trái', [['q', 'Tải q', 'kN/m', 5]], 'K8',
+    v => [sumZ('0'), sumX('-q*h1'), sumM('q*h1^2/2')], v => [it('M_max (cột trái)', null, 'kNm', h => { const mx = h.Sext('Cột trái', 'M', 1), mn = h.Sext('Cột trái', 'M', -1); return Math.abs(mx) > Math.abs(mn) ? mx : mn; })]);
   function compute(t, input) {
     const v = { ...input };
     (t.P || []).forEach(([k, , , def]) => { if (v[k] === undefined || v[k] === '') v[k] = def; if (typeof def === 'number') v[k] = +String(v[k]).replace(',', '.'); });
     const derived = [];
-    (t.d || []).forEach(([k, e, u]) => { v[k] = evalExpr(e, v); derived.push({ s: k, e, u, val: v[k], sub: subst(e, v) }); });
+    (typeof t.d === 'function' ? t.d(v) : (t.d || [])).forEach(([k, e, u]) => { v[k] = evalExpr(e, v); derived.push({ s: k, e, u, val: v[k], sub: subst(e, v) }); });
     const err = t.chk ? t.chk(v) : ''; if (err) return { ok: false, error: err, v };
     const model = t.build(v);
     let h; try { h = analyze(model, t.factors ? t.factors(v) : { L: 1 }); } catch (e) { return { ok: false, error: e.message, v }; }
@@ -871,7 +990,7 @@ svg{display:block;max-width:100%}
       if (x.fem) { try { o.femv = x.fem(h) * sc; } catch (e) { o.femv = NaN; } }
       if (o.val != null && o.femv != null && isFinite(o.femv)) {
         const tol = x.tol || 0.005, den = Math.max(Math.abs(o.femv), Math.abs(o.val), 1e-9);
-        o.err = Math.abs(o.val - o.femv) / den; o.ok = o.err <= tol || Math.abs(o.val - o.femv) < 1e-6; o.tol = tol;
+        o.err = Math.abs(o.val - o.femv) < 1e-6 ? 0 : Math.abs(o.val - o.femv) / den; o.ok = o.err <= tol || Math.abs(o.val - o.femv) < 1e-6; o.tol = tol;
       }
       return o;
     });
@@ -1004,8 +1123,10 @@ const TU = { 'kN': 'T', 'kN/m': 'T/m', 'kNm': 'T·m', 'kN/m²': 'T/m²' };
 const dual = (v, d = 2) => `${SoDo.fmtN(+v.toFixed(d))} (${SoDo.fmtN(+(v / TF()).toFixed(d))})`;
 const toT = (v, u) => TU[u] ? `${fx(v / TF(), 3)} ${TU[u]}` : '';
 function unitOf(t, k, unit, r) { if (unit) return unit; if (/^[gp]\d$/.test(k) || k === 'W') return (r.tai === 'q') ? 'kN/m' : 'kN'; return unit; }
-const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
 const GN = g => ROM[[...new Set(SoDo.list.map(t => t.g))].indexOf(g)];
+// dầm nghiêng đặt sau mục tổ hợp (giữ số X, XI)
+{ const inc = SoDo.list.filter(t => t.stiff === 'incl' || t.late); inc.forEach(t => SoDo.list.splice(SoDo.list.indexOf(t), 1)); SoDo.list.push(...inc); }
 // cây thư mục: I. Nhóm → I.1. Sơ đồ
 (() => { const cnt = {}; SoDo.list.forEach(t => { if (t.n0) return; t.n0 = t.n; cnt[t.g] = (cnt[t.g] || 0) + 1; const nm = t.n.replace(/^(\d+[a-z]?|K\d)\s*·\s*/, ''); t.code = `${GN(t.g)}.${cnt[t.g]}`; t.n = `${t.code}. ${nm.charAt(0).toUpperCase()}${nm.slice(1)}`; }); })();
 const tpl = () => SoDo.list.find(t => t.id === ST.cur) || SoDo.list[0];
@@ -1171,7 +1292,7 @@ function queryAt(r, spec) { // spec: {k: memberIndex, xs:[...]} -> helper với 
 }
 
 // ---------- Vẽ ----------
-const COL = { M: '#c0392b', V: '#1f6fb2', f: '#e07b00', L: '#0b8a7a' };
+const COL = { M: '#c0392b', V: '#1f6fb2', N: '#7d3c98', f: '#e07b00', L: '#0b8a7a' };
 const TX = (x, y, s, c = '#1d2433', sz = 11, a = 'middle', ex = '') => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="${c}" font-size="${sz}" text-anchor="${a}" font-family="Inter,Segoe UI,Arial" paint-order="stroke" stroke="#fff" stroke-width="3" ${ex}>${esc(s)}</text>`;
 function arrow(x1, y1, x2, y2, c, w = 1.3) { const a = Math.atan2(y2 - y1, x2 - x1), h = 6.5; return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"/><path d="M${x2},${y2}L${x2 - h * Math.cos(a - .4)},${y2 - h * Math.sin(a - .4)}L${x2 - h * Math.cos(a + .4)},${y2 - h * Math.sin(a + .4)}Z" fill="${c}"/>`; }
 function supSym(x, y, s) {
@@ -1239,35 +1360,86 @@ function beamPlot(r, key, W = 640, env, mk, Hc) {
   return `<svg class="${mk ? 'xs' : ''}" data-w="${W}" data-pad="${pad}" data-lt="${Lt}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
 }
 // Khung
+// ---------- Dầm nghiêng (1 hoặc nhiều đoạn thẳng hàng; s đo dọc thanh từ đầu trái) ----------
+const FR = t => t.stiff === 'frame' || t.stiff === 'incl';
+const KEYS = t => t.stiff === 'incl' ? ['M', 'V', 'N', 'f'] : ['M', 'V', 'f'];
+function inclSeg(r) { const m = r.model, nd = id => m.nodes.find(n => n.id === id); let s0 = 0; const o = m.members.map((mb, k) => { const a = nd(mb.i), b = nd(mb.j), L = Math.hypot(b.x - a.x, b.z - a.z), x = { k, s0, L, a, b }; s0 += L; return x; }); o.S = s0; o.x0 = nd(m.members[0].i); return o; }
+function inclLoc(r, s) { const sg = inclSeg(r); if (s < -1e-9 || s > sg.S + 1e-9) return null; let q = sg.find(g => s <= g.s0 + g.L + 1e-9); return { k: q.k, xl: Math.min(Math.max(s - q.s0, 0), q.L), S: sg.S }; }
+function inclSVG(r, key, W = 420, mk) {
+  const m = r.model, sg = inclSeg(r), X0 = sg.x0, last = sg[sg.length - 1].b, c = (last.x - X0.x) / sg.S, sn = (last.z - X0.z) / sg.S;
+  const xs = m.nodes.map(n => n.x), zs = m.nodes.map(n => n.z), xmin = Math.min(...xs), xmax = Math.max(...xs), zmin = Math.min(...zs), zmax = Math.max(...zs);
+  const H = 300, pad = 62, sc = Math.min((W - 2 * pad - 30) / (xmax - xmin), (H - 120) / Math.max(zmax - zmin, 1e-6)), ox = pad - xmin * sc, oy = H - 62 + zmin * sc, P = (x, z) => [ox + x * sc, oy - z * sc];
+  const PS = sx => P(X0.x + sx * c, X0.z + sx * sn), A0 = PS(0), B0 = PS(sg.S);
+  const line = (a, b, w = 1.875) => `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#000" stroke-width="${w}" stroke-linecap="round"/>`;
+  const sup = () => m.supports.map(s => { const n = m.nodes.find(q => q.id === s.node), [x, y] = P(n.x, n.z); return s.ux ? supSym(x, y, { ux: 1, uz: 1 }) : `<circle cx="${x}" cy="${y + 3}" r="3" fill="#fff" stroke="#1d2433" stroke-width="1.3"/><line x1="${x}" y1="${y + 6}" x2="${x}" y2="${y + 30}" stroke="#1d2433" stroke-width="1.6"/><circle cx="${x}" cy="${y + 33}" r="3" fill="#fff" stroke="#1d2433" stroke-width="1.3"/>` + fixedBase(x, y + 36); }).join('');
+  const lbl = () => m.nodes.map(n => { const [x, y] = P(n.x, n.z); return TX(x - 10, y - 8, n.id, '#2E5597', 12, 'end', 'font-weight="700"'); }).join('');
+  let g = '';
+  if (!key) {
+    g += line(A0, B0, 2.25) + sup() + lbl();
+    const v = r.v, us = m.memberLoads.filter(l => l.type === 'U');
+    if (us.length) { const n = Math.max(6, Math.round(12 * sg.S / Math.hypot(v.L, v.h))); for (let q = 0; q <= n; q++) { const [x, y] = PS(sg.S * q / n); g += arrow(x, y - 30, x, y - 3, COL.L, .9); } g += `<line x1="${A0[0]}" y1="${A0[1] - 30}" x2="${B0[0]}" y2="${B0[1] - 30}" stroke="${COL.L}"/>`;
+      g += TX((A0[0] + B0[0]) / 2, Math.min(A0[1], B0[1]) - 40, `q = ${SoDo.fmtN(v.q)} kN/m (${SoDo.fmtN(+(v.q / TF()).toFixed(2))} T/m) – theo ${v.qm === 'proj' ? 'hình chiếu ngang' : 'chiều dài thanh'}`, COL.L, 10.5, 'middle'); }
+    const ps = m.memberLoads.filter(l => l.type === 'P').map(l => { const k = m.members.findIndex(mb => mb.id === l.member); return { ...l, s: sg[k].s0 + l.a * sg[k].L }; });
+    ps.forEach((l, i) => { const [x, y] = PS(l.s); g += arrow(x, y - 38, x, y - 3, COL.L, 1.7); if (i === 0 || ps.length < 4) g += TX(x + 4, y - 41, 'P = ' + SoDo.fmtN(l.w1) + ' kN (' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T)', COL.L, 10, 'start'); });
+    // kích thước theo phương ngang
+    const yd = oy + 46 - zmin * sc, marks = [...new Set([...xs, ...ps.map(l => +(X0.x + l.s * c).toFixed(6))])].sort((a, b) => a - b);
+    g += `<line x1="${P(xmin, 0)[0]}" y1="${yd}" x2="${P(xmax, 0)[0]}" y2="${yd}" stroke="#6b7486"/>`;
+    marks.forEach((x, i) => { const X = P(x, 0)[0]; g += `<line x1="${X}" y1="${yd - 5}" x2="${X}" y2="${yd + 5}" stroke="#6b7486"/>`; if (i) { const X1 = P(marks[i - 1], 0)[0]; if (X - X1 > 22) g += TX((X + X1) / 2, yd - 4, SoDo.fmtN(+(x - marks[i - 1]).toFixed(3)), '#6b7486', 9.5); } });
+    const nA = m.nodes.find(n => n.id === 'A'), nB = m.nodes.find(n => n.id === 'B'), yd2 = yd + 16, seg = [[xmin, nA.x, 'a'], [nA.x, nB.x, 'L'], [nB.x, xmax, 'b']].filter(([p1, p2]) => p2 - p1 > 1e-9);
+    if (seg.length > 1) seg.forEach(([p1, p2, nm]) => { const X1 = P(p1, 0)[0], X2 = P(p2, 0)[0]; g += `<line x1="${X1}" y1="${yd2}" x2="${X2}" y2="${yd2}" stroke="#6b7486"/><line x1="${X1}" y1="${yd2 - 4}" x2="${X1}" y2="${yd2 + 4}" stroke="#6b7486"/><line x1="${X2}" y1="${yd2 - 4}" x2="${X2}" y2="${yd2 + 4}" stroke="#6b7486"/>` + TX((X1 + X2) / 2, yd2 + 13, nm + ' = ' + SoDo.fmtN(+(p2 - p1).toFixed(3)) + ' m', '#1d2433', 10.5); });
+    else g += TX((P(xmin, 0)[0] + P(xmax, 0)[0]) / 2, yd + 14, 'L = ' + SoDo.fmtN(r.v.L) + ' m', '#1d2433', 10.5);
+    const xr = P(xmax, 0)[0] + 22, [, yA] = P(nA.x, nA.z), [, yB] = P(nB.x, nB.z);
+    g += `<line x1="${xr}" y1="${yA}" x2="${xr}" y2="${yB}" stroke="#6b7486"/><line x1="${xr - 5}" y1="${yA}" x2="${xr + 5}" y2="${yA}" stroke="#6b7486"/><line x1="${xr - 5}" y1="${yB}" x2="${xr + 5}" y2="${yB}" stroke="#6b7486"/>` + TX(xr + 5, (yA + yB) / 2, 'h = ' + SoDo.fmtN(r.v.h) + ' m', '#1d2433', 10.5, 'start');
+    g += TX((A0[0] + B0[0]) / 2 + 12, (A0[1] + B0[1]) / 2 + 18, `S = ${SoDo.fmtN(+sg.S.toFixed(3))} m, α = ${SoDo.fmtN(+(Math.atan2(r.v.h, r.v.L) * 180 / Math.PI).toFixed(2))}°`, '#6b7486', 10, 'start');
+    if (mk) { const [x, y] = PS(mk.x); g += mkDot(x, y, 's = ' + SoDo.fmtN(mk.x) + ' m'); }
+  } else {
+    const val = p => key === 'f' ? -p.v * 1000 : p[key], res = r.h.res;
+    let vmax = 1e-9; res.members.forEach(mr => mr.stations.forEach(p => vmax = Math.max(vmax, Math.abs(val(p)))));
+    const cl = COL[key], f = Math.hypot(r.v.L, r.v.h) * 0.16 * sc / vmax, sgn = key === 'M' || key === 'f' ? -1 : 1;
+    const Q = (sx, o) => { const [x, y] = PS(sx); return [x - o * sn, y - o * c]; };
+    let gmax = null;
+    sg.forEach(q => { const st = res.members[q.k].stations, pts = st.map(p => Q(q.s0 + p.x, sgn * val(p) * f));
+      g += `<polygon points="${[Q(q.s0, 0), ...pts, Q(q.s0 + q.L, 0)].map(t => t.map(z => z.toFixed(1)).join(',')).join(' ')}" fill="${cl}" fill-opacity=".13" stroke="${cl}" stroke-width="0.7"/>`;
+      let ie = 0; st.forEach((p, i) => { if (Math.abs(val(p)) > Math.abs(val(st[ie]))) ie = i; });
+      const labs = [0, st.length - 1]; if (ie > 2 && ie < st.length - 3) labs.push(ie);
+      labs.forEach(i => { const p = st[i], vv = val(p); if (Math.abs(vv) < vmax * .03) return; const o = sgn * vv * f + Math.sign(sgn * vv || 1) * 12; const [x, y] = Q(q.s0 + p.x, o); g += TX(x, y + 4, key === 'f' ? fx(vv, 3) : dual(vv), cl, 10, 'middle', 'font-weight="600"'); }); });
+    g += line(A0, B0) + sup();
+    g += TX(W / 2, 14, { M: 'M – kNm (T·m), vẽ phía thớ căng', V: 'Q – kN (T), vuông góc trục thanh', N: 'N – kN (T), dọc trục (+ kéo, − nén)', f: 'f⊥ – mm, vuông góc trục thanh' }[key], cl, 11.5, 'middle', 'font-weight="700"');
+    if (mk) { const vv = key === 'f' ? -mk.v * 1000 : mk[key], o = sgn * vv * f, a = Q(mk.x, 0), b = Q(mk.x, o); g += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#1d2433" stroke-dasharray="5 4"/>` + mkDot(b[0], b[1], key === 'f' ? fx(vv, 3) : dual(vv)) + `<circle cx="${a[0]}" cy="${a[1]}" r="3.5" fill="${MKC}"/>`; }
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
 function frameSVG(r, key, W = 420, mk) {
-  const m = r.model, v = r.v, H = 330, pad = 66, sc = Math.min((W - 2 * pad) / v.l, (H - 130) / v.h), ox = (W - v.l * sc) / 2, oy = H - 45, P = (x, z) => [ox + x * sc, oy - z * sc];
+  if (r.t && r.t.stiff === 'incl') return inclSVG(r, key, W, mk);
+  const m = r.model, v = r.v, hL = v.h1 ?? v.h, hR = v.h2 ?? v.h, Hm = Math.max(hL, hR), zb = x => hL + (hR - hL) * x / v.l, H = 330, pad = 66, sc = Math.min((W - 2 * pad) / v.l, (H - 130) / Hm), ox = (W - v.l * sc) / 2, oy = H - 45, P = (x, z) => [ox + x * sc, oy - z * sc];
   let g = ''; const nd = id => m.nodes.find(n => n.id === id);
   m.members.forEach(mb => { const a = P(nd(mb.i).x, nd(mb.i).z), b = P(nd(mb.j).x, nd(mb.j).z); g += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#000" stroke-width="1.875"/>`; });
   g += fixedBase(...P(0, 0)) + fixedBase(...P(v.l, 0));
   ['a', 'b', 'c', 'd'].forEach(id => { const n = nd(id), [x, y] = P(n.x, n.z); g += TX(x + (n.x ? 10 : -10), y + (n.z ? -8 : -6), id, '#2E5597', 12, n.x ? 'start' : 'end', 'font-weight="700"'); });
   if (!key) {
     m.memberLoads.forEach(l => {
-      if (l.type === 'P') { const [x, y] = P(l.a * v.l, v.h); g += arrow(x, y - 40, x, y - 3, COL.L, 1.8) + TX(x + 5, y - 42, 'P = ' + SoDo.fmtN(l.w1) + ' kN (' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T)', COL.L, 10.5, 'start'); const [x0] = P(0, 0); g += `<line x1="${x0}" y1="${y + 18}" x2="${x}" y2="${y + 18}" stroke="#6b7486"/>` + TX((x0 + x) / 2, y + 30, 'u·l = ' + SoDo.fmtN(+(l.a * v.l).toFixed(3)) + ' m', '#6b7486', 10); }
-      else if (l.dir === 'GZ') { const n = 10; for (let q = 0; q <= n; q++) { const [x, y] = P(v.l * q / n, v.h); g += arrow(x, y - 26, x, y - 3, COL.L, .9); } const [xa, ya] = P(0, v.h), [xb] = P(v.l, v.h); g += `<line x1="${xa}" y1="${ya - 26}" x2="${xb}" y2="${ya - 26}" stroke="${COL.L}"/>` + TX((xa + xb) / 2, ya - 31, 'q = ' + SoDo.fmtN(l.w1) + ' kN/m (' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T/m)', COL.L, 10.5); }
-      else { const n = 8; for (let q = 0; q <= n; q++) { const [x, y] = P(0, v.h * q / n); g += arrow(x - 28, y, x - 3, y, COL.L, .9); } const [xa, ya] = P(0, 0), [, yb] = P(0, v.h); g += `<line x1="${xa - 28}" y1="${ya}" x2="${xa - 28}" y2="${yb}" stroke="${COL.L}"/>` + TX(xa - 32, (ya + yb) / 2, 'q = ' + SoDo.fmtN(l.w1) + ' kN/m', COL.L, 10.5, 'end') + TX(xa - 32, (ya + yb) / 2 + 13, '(' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T/m)', COL.L, 10.5, 'end'); }
+      if (l.type === 'P') { const [x, y] = P(l.a * v.l, zb(l.a * v.l)); g += arrow(x, y - 40, x, y - 3, COL.L, 1.8) + TX(x + 5, y - 42, 'P = ' + SoDo.fmtN(l.w1) + ' kN (' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T)', COL.L, 10.5, 'start'); const [x0] = P(0, 0); g += `<line x1="${x0}" y1="${y + 18}" x2="${x}" y2="${y + 18}" stroke="#6b7486"/>` + TX((x0 + x) / 2, y + 30, 'u·l = ' + SoDo.fmtN(+(l.a * v.l).toFixed(3)) + ' m', '#6b7486', 10); }
+      else if (l.dir === 'GZ') { const n = 10; for (let q = 0; q <= n; q++) { const [x, y] = P(v.l * q / n, zb(v.l * q / n)); g += arrow(x, y - 26, x, y - 3, COL.L, .9); } const [xa, ya] = P(0, hL), [xb, yb] = P(v.l, hR); g += `<line x1="${xa}" y1="${ya - 26}" x2="${xb}" y2="${yb - 26}" stroke="${COL.L}"/>` + TX((xa + xb) / 2, Math.min(ya, yb) - 31, 'q = ' + SoDo.fmtN(l.w1) + ' kN/m (' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T/m)', COL.L, 10.5); }
+      else { const n = 8; for (let q = 0; q <= n; q++) { const [x, y] = P(0, hL * q / n); g += arrow(x - 28, y, x - 3, y, COL.L, .9); } const [xa, ya] = P(0, 0), [, yb] = P(0, hL); g += `<line x1="${xa - 28}" y1="${ya}" x2="${xa - 28}" y2="${yb}" stroke="${COL.L}"/>` + TX(xa - 32, (ya + yb) / 2, 'q = ' + SoDo.fmtN(l.w1) + ' kN/m', COL.L, 10.5, 'end') + TX(xa - 32, (ya + yb) / 2 + 13, '(' + SoDo.fmtN(+(l.w1 / TF()).toFixed(2)) + ' T/m)', COL.L, 10.5, 'end'); }
     });
-    m.nodalLoads.forEach(l => { const [x, y] = P(0, v.h); g += arrow(x - 48, y, x - 3, y, COL.L, 1.8) + TX(x - 50, y - 6, 'P = ' + SoDo.fmtN(l.Fx) + ' kN (' + SoDo.fmtN(+(l.Fx / TF()).toFixed(2)) + ' T)', COL.L, 10.5, 'end'); });
-    const [x0, y0] = P(0, 0), [x1] = P(v.l, 0), [, yt] = P(0, v.h);
+    m.nodalLoads.forEach(l => { const [x, y] = P(0, hL); g += arrow(x - 48, y, x - 3, y, COL.L, 1.8) + TX(x - 50, y - 6, 'P = ' + SoDo.fmtN(l.Fx) + ' kN (' + SoDo.fmtN(+(l.Fx / TF()).toFixed(2)) + ' T)', COL.L, 10.5, 'end'); });
+    const [x0, y0] = P(0, 0), [x1] = P(v.l, 0), [, yt] = P(0, hR), [, yt1] = P(0, hL);
     g += `<line x1="${x0}" y1="${y0 + 22}" x2="${x1}" y2="${y0 + 22}" stroke="#6b7486"/>` + TX((x0 + x1) / 2, y0 + 34, 'l = ' + SoDo.fmtN(v.l) + ' m', '#1d2433', 10.5);
-    g += `<line x1="${x1 + 26}" y1="${y0}" x2="${x1 + 26}" y2="${yt}" stroke="#6b7486"/>` + TX(x1 + 30, (y0 + yt) / 2, 'h = ' + SoDo.fmtN(v.h) + ' m', '#1d2433', 10.5, 'start');
+    g += `<line x1="${x1 + 26}" y1="${y0}" x2="${x1 + 26}" y2="${yt}" stroke="#6b7486"/>` + TX(x1 + 30, (y0 + yt) / 2, (v.h2 != null ? 'h₂ = ' + SoDo.fmtN(v.h2) : 'h = ' + SoDo.fmtN(v.h)) + ' m', '#1d2433', 10.5, 'start');
+    if (v.h1 != null) g += `<line x1="${x0 + 22}" y1="${y0}" x2="${x0 + 22}" y2="${yt1}" stroke="#6b7486"/><line x1="${x0 + 17}" y1="${yt1}" x2="${x0 + 27}" y2="${yt1}" stroke="#6b7486"/>` + TX(x0 + 27, (y0 + yt1) / 2, 'h₁ = ' + SoDo.fmtN(v.h1) + ' m', '#1d2433', 10.5, 'start');
     g += TX(W / 2, 14, 'J₁ (cột)  ·  J₂ (dầm)', '#6b7486', 10.5);
     if (mk) { const mb = m.members[mk.k], a = nd(mb.i), b = nd(mb.j), L = Math.hypot(b.x - a.x, b.z - a.z), c = (b.x - a.x) / L, s = (b.z - a.z) / L; const [x, y] = P(a.x + mk.x * c, a.z + mk.x * s); g += `<circle cx="${x}" cy="${y}" r="4" fill="${MKC}"/>` + mkDot(x, y, 'x = ' + SoDo.fmtN(mk.x) + ' m'); }
   } else {
     const res = r.h.res; let vmax = 1e-9; res.members.forEach(mr => mr.stations.forEach(p => vmax = Math.max(vmax, Math.abs(key === 'f' ? Math.hypot(p.u, p.v) : p[key]))));
     const c = COL[key];
     if (key === 'f') {
-      const f = Math.max(v.l, v.h) * 0.08 / vmax;
+      const f = Math.max(v.l, Hm) * 0.08 / vmax;
       res.members.forEach((mr, k) => { const a = nd(m.members[k].i); g += `<polyline points="${mr.stations.map(p => P(a.x + p.x * mr.c + f * (p.u * mr.c - p.v * mr.s), a.z + p.x * mr.s + f * (p.u * mr.s + p.v * mr.c)).map(t => t.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="1"/>`; });
       res.nodes.forEach(n => { if (!/[cd]/.test(n.id)) return; const nn = nd(n.id), [x, y] = P(nn.x, nn.z); g += TX(x + (nn.x ? 8 : -8), y + 18, `Ux=${fx(n.ux * 1000, 2)} Uz=${fx(n.uz * 1000, 2)} mm`, c, 10, nn.x ? 'start' : 'end'); });
       g += TX(W / 2, 14, 'Biến dạng (phóng đại ×' + fx(f, 0) + ')', c, 11.5, 'middle', 'font-weight="700"');
       if (mk) { const mr = res.members[mk.k], a = nd(m.members[mk.k].i); const [x, y] = P(a.x + mk.x * mr.c + f * (mk.u * mr.c - mk.v * mr.s), a.z + mk.x * mr.s + f * (mk.u * mr.s + mk.v * mr.c)); g += mkDot(x, y, 'v = ' + SoDo.fmtN(+(mk.v * 1000).toFixed(3)) + ' mm'); }
     } else {
-      const f = Math.max(v.l, v.h) * 0.13 / vmax, sgn = key === 'M' ? -1 : 1;
+      const f = Math.max(v.l, Hm) * 0.13 / vmax, sgn = key === 'M' ? -1 : 1;
       res.members.forEach((mr, k) => {
         const a = nd(m.members[k].i), st = mr.stations;
         const pp = st.map(p => { const o = p[key] * f * sgn; return P(a.x + p.x * mr.c - o * mr.s, a.z + p.x * mr.s + o * mr.c); });
@@ -1450,11 +1622,18 @@ function verdict(items) {
 }
 function stepTable(r, k, dx) {
   const t = r.t; let rows = [];
-  if (t.stiff === 'frame') {
+  if (t.stiff === 'incl') {
+    const sg = inclSeg(r); let ss = []; for (let x = 0; x <= sg.S + 1e-9; x += dx) ss.push(Math.min(+x.toFixed(6), sg.S)); if (ss[ss.length - 1] < sg.S - 1e-9) ss.push(sg.S); ss = [...new Set(ss)];
+    const m = JSON.parse(JSON.stringify(r.model)), loc = ss.map(x => inclLoc(r, x)); m.members.forEach((mb, k) => mb.xs = loc.filter(l => l.k === k).map(l => l.xl));
+    const h = SoDo.analyzeModel(m, r.factors);
+    ss.forEach((x, i) => { const l = loc[i], st = h.res.members[l.k].stations.filter(p => Math.abs(p.x - l.xl) < 1e-9), p = st[st.length - 1]; if (p) rows.push([x, p.V, p.M, -p.v * 1000, p.N]); });
+    return rows;
+  }
+  if (FR(t)) {
     const mb = r.model.members[k], nd = id => r.model.nodes.find(n => n.id === id); const a = nd(mb.i), b = nd(mb.j), L = Math.hypot(b.x - a.x, b.z - a.z);
-    const xs = []; for (let x = 0; x <= L + 1e-9; x += dx) xs.push(+x.toFixed(6)); if (xs[xs.length - 1] < L - 1e-9) xs.push(L);
+    let xs = []; for (let x = 0; x <= L + 1e-9; x += dx) xs.push(Math.min(+x.toFixed(6), L)); if (xs[xs.length - 1] < L - 1e-9) xs.push(L); xs = [...new Set(xs)];
     const h = queryAt(r, { k, xs }); const st = h.res.members[k].stations;
-    xs.forEach(x => { const p = st.filter(s => Math.abs(s.x - x) < 1e-9); const s = p[p.length - 1]; rows.push([x, s.V, s.M, -s.v * 1000]); });
+    xs.forEach(x => { const p = st.filter(s => Math.abs(s.x - x) < 1e-9); const s = p[p.length - 1]; if (s) rows.push([x, s.V, s.M, -s.v * 1000, s.N]); });
   } else {
     const Lt = r.model.nodes[r.model.nodes.length - 1].x; const xs = []; for (let x = 0; x <= Lt + 1e-9; x += dx) xs.push(+x.toFixed(6)); if (xs[xs.length - 1] < Lt - 1e-9) xs.push(Lt);
     const m = JSON.parse(JSON.stringify(r.model)); m.members.forEach(mb => mb.xs = xs.filter(x => x >= mb.x0 - 1e-9 && x <= mb.x0 + mb.L + 1e-9).map(x => x - mb.x0));
@@ -1466,11 +1645,16 @@ function stepTable(r, k, dx) {
 function getQ(o, t) { if (!o._q) o._q = { k: 1, x: 1, dx: 0.5, tab: 0 }; if (o._q.x === '' || o._q.x == null) o._q.x = 1; return o._q; }
 function computeMk(r, q) {
   const x = +String(q.x).replace(',', '.'); if (!isFinite(x)) return { err: 'x không hợp lệ' };
-  if (r.t.stiff === 'frame') {
+  if (r.t.stiff === 'incl') {
+    const l = inclLoc(r, x); if (!l) return { err: `s ngoài thanh (0 – ${SoDo.fmtN(+inclSeg(r).S.toFixed(3))} m)` };
+    const h2 = queryAt(r, { k: l.k, xs: [l.xl] }); const st = h2.res.members[l.k].stations.filter(p => Math.abs(p.x - l.xl) < 1e-9), sl = st[0], s2 = st[st.length - 1];
+    return { k: l.k, x, xl: l.xl, M: s2.M, V: s2.V, Vl: sl.V, Vr: s2.V, N: s2.N, u: s2.u, v: s2.v, L: l.S };
+  }
+  if (FR(r.t)) {
     const k = +q.k, mb = r.model.members[k], nd = id => r.model.nodes.find(n => n.id === id), a = nd(mb.i), b = nd(mb.j), L = Math.hypot(b.x - a.x, b.z - a.z);
     if (x < 0 || x > L + 1e-9) return { err: `x ngoài thanh (0 – ${SoDo.fmtN(L)} m)` };
     const h2 = queryAt(r, { k, xs: [x] }); const st = h2.res.members[k].stations.filter(s => Math.abs(s.x - x) < 1e-9), sl = st[0], s2 = st[st.length - 1];
-    return { k, x, M: s2.M, V: s2.V, Vl: sl.V, Vr: s2.V, u: s2.u, v: s2.v, L };
+    return { k, x, M: s2.M, V: s2.V, Vl: sl.V, Vr: s2.V, N: s2.N, u: s2.u, v: s2.v, L };
   }
   const Lt = r.model.nodes[r.model.nodes.length - 1].x; if (x < 0 || x > Lt + 1e-9) return { err: `x ngoài dầm (0 – ${SoDo.fmtN(Lt)} m)` };
   const m = JSON.parse(JSON.stringify(r.model)); m.members.forEach(mb => { if (x >= mb.x0 - 1e-9 && x <= mb.x0 + mb.L + 1e-9) mb.xs = [x - mb.x0]; });
@@ -1480,14 +1664,14 @@ function computeMk(r, q) {
 function qCard(t, r, q, mk) {
   let h = `<div class="card"><h3>Giá trị tại vị trí x</h3><div class="qx">`;
   if (t.stiff === 'frame') h += `Thanh <select id="qk" style="width:auto">${r.model.members.map((m, k) => `<option value="${k}"${k == q.k ? ' selected' : ''}>${esc(m.id)}</option>`).join('')}</select>`;
-  h += `x = <input id="qx" value="${esc(q.x)}"> m <button id="qGo">Tính</button></div><div class="mut" style="font-size:11.5px">${t.stiff === 'frame' ? 'x tính từ nút đầu thanh (chân cột / nút c).' : 'x tính từ đầu trái dầm.'} Có thể click hoặc kéo chuột trên sơ đồ / biểu đồ để đổi x.</div>`;
+  h += `${t.stiff === 'incl' ? 's' : 'x'} = <input id="qx" value="${esc(q.x)}"> m <button id="qGo">Tính</button></div><div class="mut" style="font-size:11.5px">${t.stiff === 'frame' ? 'x tính từ nút đầu thanh (chân cột / nút c).' : t.stiff === 'incl' ? 's đo dọc trục thanh từ đầu trái.' : 'x tính từ đầu trái dầm.'} Có thể click hoặc kéo chuột trên sơ đồ / biểu đồ để đổi x.</div>`;
   if (mk.err) h += `<div class="box err">${esc(mk.err)}</div>`;
-  else if (t.stiff === 'frame') h += `<table class="qt"><tr><th>Q</th><td>${Math.abs(mk.Vl - mk.Vr) > 1e-6 ? fx(mk.Vl) + ' | ' + fx(mk.Vr) : fx(mk.V)} kN</td><td>${fx(mk.V / TF(), 3)} T</td></tr><tr><th>M</th><td>${fx(mk.M)} kNm</td><td>${fx(mk.M / TF(), 3)} T·m</td></tr><tr><th>v (vuông góc thanh)</th><td>${fx(mk.v * 1000, 3)} mm</td></tr><tr><th>u (dọc thanh)</th><td>${fx(mk.u * 1000, 3)} mm</td></tr></table>`;
+  else if (FR(t)) h += `<table class="qt"><tr><th>Q</th><td>${Math.abs(mk.Vl - mk.Vr) > 1e-6 ? fx(mk.Vl) + ' | ' + fx(mk.Vr) : fx(mk.V)} kN</td><td>${fx(mk.V / TF(), 3)} T</td></tr><tr><th>M</th><td>${fx(mk.M)} kNm</td><td>${fx(mk.M / TF(), 3)} T·m</td></tr>${t.stiff === 'incl' ? `<tr><th>N</th><td>${fx(mk.N)} kN</td><td>${fx(mk.N / TF(), 3)} T</td></tr>` : ''}<tr><th>v (vuông góc thanh)</th><td>${fx(mk.v * 1000, 3)} mm</td></tr><tr><th>u (dọc thanh)</th><td>${fx(mk.u * 1000, 3)} mm</td></tr></table>`;
   else { const jump = Math.abs(mk.Vl - mk.Vr) > 1e-6; h += `<table class="qt"><tr><th></th><th>kN, kNm</th><th>T, T·m</th></tr><tr><th>Q<sub>x</sub></th><td>${jump ? fx(mk.Vl) + ' | ' + fx(mk.Vr) : fx(mk.Vr)}</td><td>${jump ? fx(mk.Vl / TF(), 3) + ' | ' + fx(mk.Vr / TF(), 3) : fx(mk.Vr / TF(), 3)}</td></tr><tr><th>M<sub>x</sub></th><td>${fx(mk.M)}</td><td>${fx(mk.M / TF(), 3)}</td></tr><tr><th>f<sub>x</sub> ↓</th><td colspan="2">${fx(mk.f, 3)} mm</td></tr></table>${jump ? '<div class="mut" style="font-size:11px">Q có bước nhảy tại x: trái | phải</div>' : ''}`; }
   h += `<div class="qx" style="margin-top:10px">Bảng theo bước Δx = <input id="qdx" value="${esc(q.dx)}"> m <button id="qTab">Lập bảng</button>${q.tab ? ' <button id="qTabX" title="Ẩn bảng">✕</button>' : ''}</div>`;
   if (q.tab) {
     const dx = +String(q.dx).replace(',', '.');
-    if (dx > 0) { const rows = stepTable(r, t.stiff === 'frame' ? +q.k : 0, dx); R._steps = { k: +q.k, dx, rows }; h += `<table class="rs" style="width:auto"><thead><tr><th>x (m)</th><th>Q (kN)</th><th>Q (T)</th><th>M (kNm)</th><th>M (T·m)</th><th>${t.stiff === 'frame' ? 'v' : 'f ↓'} (mm)</th></tr></thead><tbody>${rows.map(rw => `<tr><td class="n">${fx(rw[0], 3)}</td><td class="n">${fx(rw[1])}</td><td class="n" style="color:#9a6200">${fx(rw[1] / TF(), 3)}</td><td class="n">${fx(rw[2])}</td><td class="n" style="color:#9a6200">${fx(rw[2] / TF(), 3)}</td><td class="n">${fx(rw[3], 3)}</td></tr>`).join('')}</tbody></table>`; }
+    if (dx > 0) { const rows = stepTable(r, t.stiff === 'frame' ? +q.k : 0, dx); R._steps = { k: +q.k, dx, rows }; h += `<table class="rs" style="width:auto"><thead><tr><th>x (m)</th><th>Q (kN)</th><th>Q (T)</th><th>M (kNm)</th><th>M (T·m)</th><th>${FR(t) ? 'v' : 'f ↓'} (mm)</th></tr></thead><tbody>${rows.map(rw => `<tr><td class="n">${fx(rw[0], 3)}</td><td class="n">${fx(rw[1])}</td><td class="n" style="color:#9a6200">${fx(rw[1] / TF(), 3)}</td><td class="n">${fx(rw[2])}</td><td class="n" style="color:#9a6200">${fx(rw[2] / TF(), 3)}</td><td class="n">${fx(rw[3], 3)}</td></tr>`).join('')}</tbody></table>`; }
   }
   return h + '</div>';
 }
@@ -1784,7 +1968,7 @@ function rcCtx(t, o, r) { // trả về ctx hoặc null cho sơ đồ hiện t�
     return { s: o._s1, model: md, beamIds: md.members.map(m => m.id), facFull, facLong, uls: { Mpos: Math.max(0, e.Mmax.M), Mneg: Math.min(0, e.Mmin.M), Q }, chk, ulsTxt: 'Nội lực tính toán = tổng tổ hợp Σ(hệ số × TH)', slsTxt: 'Tải tiêu chuẩn: toàn bộ = Σ TH; dài hạn = TH thường xuyên + tạm thời dài hạn' };
   }
   if (!r || !r.ok) return null;
-  const frame = t.stiff === 'frame'; if (frame && t.id !== 'K1' && t.id !== 'K3') return { na: 'Kiểm tra dầm khung áp dụng cho K1, K3 (tải đứng trên dầm). Cột chịu nén lệch tâm – chưa có trong phiên bản này.' };
+  const frame = t.stiff === 'frame'; if (frame && !['K1', 'K3', 'K5', 'K7'].includes(t.id)) return { na: 'Kiểm tra dầm khung áp dụng cho sơ đồ tải đứng trên dầm (IX.1, IX.3, XIV.1, XIV.3). Cột chịu nén lệch tâm – chưa có trong phiên bản này.' };
   const beamIds = frame ? ['Dầm'] : r.model.members.map(m => m.id), gf = +chk.gf || 1;
   let facFull = { L: 1 }, facLong = { L: +chk.psi }, uls;
   const ext = (h) => { const st = beamStations(h.res, r.model, beamIds); return { Mpos: Math.max(0, ...st.map(p => p.M)), Mneg: Math.min(0, ...st.map(p => p.M)), Q: Math.max(...st.map(p => Math.abs(p.V))) }; };
@@ -1855,9 +2039,9 @@ function renderMain() {
       ${t.stiff === 'frame' ? stiffForm(o._s1, 1, 'Độ cứng cột – J₁') + stiffForm(o._s2, 2, 'Độ cứng dầm – J₂') : stiffForm(o._s1, 1, 'Độ cứng EJ')}</div>`;
   if (!r.ok) { h += `<div class="lay"><div>${pCard}</div><div><div class="box err">✖ ${esc(r.error)}</div></div></div>`; el.innerHTML = h; bindForm(t, o); el.scrollTop = sy; return; }
   const mk = computeMk(r, q), M = mk.err ? null : mk;
-  let right = `<div class="card"><h3>Sơ đồ tính</h3>${t.stiff === 'frame' ? frameSVG(r, null, 420, M).replace('<svg ', '<svg style="width:100%;max-width:520px;height:auto" ') : beamSchematic(r, 640, M)}${t.note ? `<div class="box note">${esc(t.note)}</div>` : ''}</div>`;
+  let right = `<div class="card"><h3>Sơ đồ tính</h3>${FR(t) ? frameSVG(r, null, 420, M).replace('<svg ', '<svg style="width:100%;max-width:520px;height:auto" ') : beamSchematic(r, 640, M)}${t.note ? `<div class="box note">${esc(t.note)}</div>` : ''}</div>`;
   right += `<div class="card"><h3>Biểu đồ${t.id === 'LK' ? ' – toàn bộ tải g + p' : ''}</h3>`;
-  if (t.stiff === 'frame') right += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:8px">${['M', 'V', 'f'].map(k => frameSVG(r, k, 420, M).replace('<svg ', '<svg style="width:100%;height:auto" ')).join('')}</div>`;
+  if (FR(t)) right += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:8px">${KEYS(t).map(k => frameSVG(r, k, 420, M).replace('<svg ', '<svg style="width:100%;height:auto" ')).join('')}</div>`;
   else { const env = t.id === 'LK' ? envelopeLK(r) : null; right += beamPlot(r, 'M', 640, env, M) + beamPlot(r, 'V', 640, null, M) + beamPlot(r, 'f', 640, null, M); }
   right += '</div>';
   h += `<div class="lay"><div>${pCard}${liveCard(t, o, r.v)}${qCard(t, r, q, mk)}</div><div>${right}</div></div>`;
@@ -1887,10 +2071,10 @@ function bindForm(t, o) {
 
 // ---------- Thuyết minh ----------
 function reportHTML(r) {
-  const t = r.t, o = inp(t), I = ST.info, frame = t.stiff === 'frame';
+  const t = r.t, o = inp(t), I = ST.info, frame = FR(t), two = t.stiff === 'frame';
   const full = h => h.replace(/<svg /g, '<svg style="width:100%;height:auto" ');
-  const sv = (frame ? [['Cột – J₁', o._s1], ['Dầm – J₂', o._s2]] : [['', o._s1]]).flatMap(([nm, ss]) => { const e = EJof(ss); return [(nm ? nm + ': ' : '') + e.txt].concat(e.rtxt ? [(nm ? nm + ' – ' : '') + e.rtxt] : []); });
-  const secs = (frame ? [o._s1, o._s2] : [o._s1]).map(ss => isRC(ss) && ss.useRf ? sectionSVG(ss, 130).replace('<svg ', '<svg class="sec" ') : '').join('');
+  const sv = (two ? [['Cột – J₁', o._s1], ['Dầm – J₂', o._s2]] : [['', o._s1]]).flatMap(([nm, ss]) => { const e = EJof(ss); return [(nm ? nm + ': ' : '') + e.txt].concat(e.rtxt ? [(nm ? nm + ' – ' : '') + e.rtxt] : []); });
+  const secs = (two ? [o._s1, o._s2] : [o._s1]).map(ss => isRC(ss) && ss.useRf ? sectionSVG(ss, 130).replace('<svg ', '<svg class="sec" ') : '').join('');
   const pars = (t.P || []).filter(([k, , , , , vis]) => !vis || vis(r.v)).map(([k, label, unit, , opts]) => { let val = r.v[k]; if (opts) { const f = opts.find(op => String(Array.isArray(op) ? op[0] : op) === String(val)); val = Array.isArray(f) ? f[1] : f; } return [label, typeof val === 'number' ? SoDo.fmtN(val) : val, unit]; });
   const q = getQ(o, t), mk = computeMk(r, q), M = mk.err ? null : mk;
   let h = `<div class="pg"><div class="pgi">
@@ -1902,12 +2086,12 @@ function reportHTML(r) {
    <h2>3. Nội lực, chuyển vị</h2>${t.id === 'LK' ? lkTable(r) : itemsTable(r.items, true).replace(/class="okc">✔/g, '>Đạt').replace(/class="badc">✖/g, '>Lệch').replace(/<div class="mut" style="font-size:11px">/g, '<div class="sm">')}
    <div class="sm">Quy đổi: 1 T = ${fx(TF(), 2)} kN. Quy ước: M dương căng thớ dưới; phản lực dương hướng lên; f dương hướng xuống. "Lời giải số": kiểm chứng bằng phần tử hữu hạn (PA1 Frame2D v${Frame2D.version}), dung sai 0,5%.</div>
    <h2>4. Biểu đồ nội lực, chuyển vị</h2>`;
-  if (frame) h += `<div class="f3">${['M', 'V', 'f'].map(k => full(frameSVG(r, k, 420, M))).join('')}</div>`;
+  if (frame) h += `<div class="f3"${t.stiff === 'incl' ? ' style="grid-template-columns:repeat(4,1fr)"' : ''}>${KEYS(t).map(k => full(frameSVG(r, k, 420, M))).join('')}</div>`;
   else { const env = t.id === 'LK' ? envelopeLK(r) : null; h += ['M', 'V', 'f'].map((k, i) => `<div class="fig">${full(beamPlot(r, k, 640, i ? null : env, M, 128))}</div>`).join(''); }
   // bảng giá trị (xoay ngang)
-  let rows; if (q.tab && R._steps && R._steps.rows) rows = R._steps.rows; else { const L = frame ? (() => { const mb = r.model.members[+q.k], nd = id => r.model.nodes.find(n => n.id === id), a = nd(mb.i), b = nd(mb.j); return Math.hypot(b.x - a.x, b.z - a.z); })() : r.model.nodes[r.model.nodes.length - 1].x; rows = stepTable(r, frame ? +q.k : 0, L / 10); }
+  let rows; if (q.tab && R._steps && R._steps.rows) rows = R._steps.rows; else { const L = t.stiff === 'incl' ? inclSeg(r).S : frame ? (() => { const mb = r.model.members[+q.k], nd = id => r.model.nodes.find(n => n.id === id), a = nd(mb.i), b = nd(mb.j); return Math.hypot(b.x - a.x, b.z - a.z); })() : r.model.nodes[r.model.nodes.length - 1].x; rows = stepTable(r, frame && t.stiff !== 'incl' ? +q.k : 0, L / 10); }
   let note5 = ''; if (rows.length > 26) { const N = rows.length, pick = []; for (let i = 0; i < 26; i++) pick.push(Math.round(i * (N - 1) / 25)); note5 = ` <span style="font-weight:400;text-transform:none">(in rút gọn 26/${N} điểm)</span>`; rows = [...new Set(pick)].map(i => rows[i]); }
-  h += `<h2>5. Bảng giá trị${frame ? ' – thanh ' + esc(r.model.members[+q.k].id) : ''}${note5}</h2>`;
+  h += `<h2>5. Bảng giá trị${t.stiff === 'incl' ? ' – s dọc thanh từ đầu trái' : frame ? ' – thanh ' + esc(r.model.members[+q.k].id) : ''}${note5}</h2>`;
   if (M) h += `<div class="sm"><b>Tại x = ${SoDo.fmtN(M.x)} m:</b> Q = ${Math.abs(M.Vl - M.Vr) > 1e-6 ? fx(M.Vl) + ' | ' + fx(M.Vr) : fx(M.Vr)} kN (${fx(M.Vr / TF(), 3)} T); M = ${fx(M.M)} kNm (${fx(M.M / TF(), 3)} T·m); ${frame ? 'v = ' + fx(M.v * 1000, 3) : 'f = ' + fx(M.f, 3)} mm</div>`;
   for (let i = 0; i < rows.length; i += 13) { const c = rows.slice(i, i + 13); h += `<table class="tx"><tr><th>x (m)</th>${c.map(rw => `<th>${fx(rw[0], 2)}</th>`).join('')}</tr><tr><th>Q (kN)</th>${c.map(rw => `<td>${fx(rw[1])}</td>`).join('')}</tr><tr><th>Q (T)</th>${c.map(rw => `<td>${fx(rw[1] / TF(), 3)}</td>`).join('')}</tr><tr><th>M (kNm)</th>${c.map(rw => `<td>${fx(rw[2])}</td>`).join('')}</tr><tr><th>M (T·m)</th>${c.map(rw => `<td>${fx(rw[2] / TF(), 3)}</td>`).join('')}</tr><tr><th>${frame ? 'v' : 'f'} (mm)</th>${c.map(rw => `<td>${fx(rw[3], 3)}</td>`).join('')}</tr></table>`; }
   { const rc = rcCard(t, o, r, true); if (rc) h += `<h2>6. Kiểm tra cấu kiện dầm BTCT theo TCVN 5574:2018</h2>${rcPrint(rc)}`; }

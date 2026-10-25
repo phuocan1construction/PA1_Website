@@ -11,7 +11,7 @@ const newProjects = [
 
 const renovationProjects = [
   { name: 'Cải tạo 1', folder: 'Renovation_001', count: 47 },
-  { name: 'Cải tạo 2', folder: 'Renovation_002', count: 15 },
+  { name: 'Cải tạo nhà phố Biên Hòa', folder: 'Renovation_002', count: 15 },
 ];
 
 function generateImages(folder: string, count: number, start: number = 1) {
@@ -106,11 +106,11 @@ const renovationSpecial = [
         </div>
 
         <div class="project-section">
-          <div class="project-section-title">Cải tạo 2</div>
+          <div class="project-section-title">Cải tạo nhà phố Biên Hòa</div>
           <div class="projects-grid">
             {generateImages('Renovation_002', 15).map(src => (
               <div class="project-card" data-full={asset(src)}>
-                <img class="project-image" src={asset(src)} alt="Cải tạo 2" loading="lazy">
+                <img class="project-image" src={asset(src)} alt="Cải tạo nhà phố Biên Hòa" loading="lazy">
               </div>
             ))}
           </div>
